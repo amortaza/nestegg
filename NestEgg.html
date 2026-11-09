@@ -292,8 +292,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 }
 #drawer-close:hover { color: #e6e9ef; }
 
-#project-new {
-  margin-bottom: 12px;
+#project-new, .prop-actions button {
   padding: 6px 12px;
   background: #232c40;
   color: #e6e9ef;
@@ -303,7 +302,10 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
   font-size: 14px;
   cursor: pointer;
 }
-#project-new:hover { background: #2d3852; }
+#project-new:hover, .prop-actions button:hover { background: #2d3852; }
+#project-new { margin-bottom: 12px; }
+.prop-actions { display: flex; gap: 6px; margin-top: 4px; }
+.prop-actions button { flex: 1; }
 
 #project-list {
   flex: 1;
@@ -391,7 +393,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 }
 #notice {
   position: fixed;
-  z-index: 30;
+  z-index: 50;
   max-width: 280px;
   padding: 8px 12px;
   background: #3a2f12;
@@ -516,8 +518,8 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     </div>
     <button type="button" id="project-new">+ New project</button>
     <ul id="project-list"></ul>
-    <section id="project-props" aria-label="Project properties">
-      <h2>Project properties</h2>
+    <section id="project-props" aria-label="Project settings">
+      <h2>Project settings</h2>
       <label class="prop">Year of birth
         <input type="number" id="birth-year" min="1900" max="2080" step="1" placeholder="e.g. 1985">
       </label>
@@ -527,6 +529,12 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
           &ndash;
           <input type="number" id="end-year" min="2021" max="2080" step="1" aria-label="End year">
         </span>
+      </div>
+      <div class="prop-actions">
+        <button type="button" id="project-clone" title="Duplicate this project">Clone</button>
+        <button type="button" id="project-export" title="Download this project as JSON">Export</button>
+        <button type="button" id="project-import" title="Add a project from a JSON export">Import</button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
       </div>
     </section>
   </aside>
@@ -714,14 +722,13 @@ function saveState() {
   writeJSON(projectKey(projects.activeId), state);
 }
 
-// Replaces the current timeline with the active project's saved one.
-function loadState() {
+// Replaces the current timeline with the given saved one (by default the active project's).
+function loadState(saved = readJSON(projectKey(projects.activeId))) {
   for (const el of sourceEls.values()) el.root.remove();
   sourceEls.clear();
   laneOf.clear();
   Object.assign(state, defaultState());
 
-  const saved = readJSON(projectKey(projects.activeId));
   if (saved && typeof saved === 'object') applySavedState(saved);
 
   for (const s of state.sources) sourceEls.set(s.id, createSourceEl(s));
@@ -780,10 +787,11 @@ function applySavedState(saved) {
 
 const projectKey = (id) => `${STORAGE_KEY}:${id}`;
 const saveProjects = () => writeJSON(PROJECTS_KEY, projects);
+const currentProject = () => projects.list.find((p) => p.id === projects.activeId);
 
-function addProject() {
+function addProject(name) {
   const id = projects.nextId++;
-  const p = { id, name: `Project ${id}` };
+  const p = { id, name: name ?? `Project ${id}` };
   projects.list.push(p);
   return p;
 }
@@ -809,18 +817,52 @@ function loadProjects() {
   saveProjects();
 }
 
-function selectProject(id) {
+function selectProject(id, saved) {
   projects.activeId = id;
   saveProjects();
-  loadState();
+  loadState(saved);
   render();
   renderProjects();
 }
 
-function createProject() {
-  const p = addProject();
-  selectProject(p.id);
-  startRename(projectList.lastElementChild, p);
+function createProject(name, saved) {
+  const p = addProject(name);
+  selectProject(p.id, saved);
+  return p;
+}
+
+const cloneProject = () => createProject(
+  `${currentProject().name} (copy)`.slice(0, PROJECT_NAME_MAX),
+  structuredClone(state),
+);
+
+function exportProject() {
+  const { name } = currentProject();
+  const json = JSON.stringify({ name, state }, null, 2);
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${name.replace(/[\\/:*?"<>|]/g, '_')}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url));
+}
+
+// Imports always add a new project so nothing existing is overwritten.
+async function importProject(file) {
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    data = null;
+  }
+  if (!data || typeof data.state !== 'object' || data.state === null) {
+    showNotice($('project-import'), `"${file.name}" is not a project export.`);
+    return;
+  }
+  const name = typeof data.name === 'string' && data.name.trim()
+    ? data.name.trim()
+    : file.name.replace(/\.json$/i, '');
+  createProject(name.slice(0, PROJECT_NAME_MAX), data.state);
 }
 
 function deleteProject(p) {
@@ -886,7 +928,7 @@ const projectSelectButton = (p) => drawerButton('project-select', p.name, p.name
 });
 
 function renderProjects() {
-  projectName.textContent = projects.list.find((p) => p.id === projects.activeId).name;
+  projectName.textContent = currentProject().name;
   projectList.replaceChildren(...projects.list.map((p) => {
     const li = document.createElement('li');
     li.className = p.id === projects.activeId ? 'project current' : 'project';
@@ -1522,7 +1564,18 @@ document.addEventListener('pointerdown', (e) => {
 projectName.addEventListener('click', () => setDrawer(true));
 $('drawer-backdrop').addEventListener('click', () => setDrawer(false));
 $('drawer-close').addEventListener('click', () => setDrawer(false));
-$('project-new').addEventListener('click', createProject);
+$('project-new').addEventListener('click', () => {
+  const p = createProject();
+  startRename(projectList.lastElementChild, p);
+});
+$('project-clone').addEventListener('click', cloneProject);
+$('project-export').addEventListener('click', exportProject);
+$('project-import').addEventListener('click', () => $('import-file').click());
+$('import-file').addEventListener('change', (e) => {
+  const [file] = e.target.files;
+  e.target.value = '';
+  if (file) importProject(file);
+});
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeContextMenu();
