@@ -1,0 +1,1542 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Income Timeline</title>
+  <style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #0f1420;
+  color: #e6e9ef;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+}
+
+h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+
+.title { flex: none; display: flex; align-items: center; gap: 8px; margin-right: 16px; }
+.crumb-sep { color: #3a4560; font-size: 18px; }
+#project-name {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #4e9af1;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#project-name:hover { background: #232c40; border-color: #3a4560; }
+
+.controls { display: flex; gap: 6px; align-items: center; }
+
+.birth { font-size: 13px; color: #8a93a6; margin-right: 12px; }
+.birth input.tax { width: 56px; }
+.birth input {
+  width: 80px;
+  margin-left: 6px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font: inherit;
+}
+
+.controls button {
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.controls button:hover { background: #2d3852; }
+
+#bars {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: none;
+}
+
+/* Both sections reserve the same scrollbar gutter so month positions line up. */
+#pinned, #lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-gutter: stable;
+}
+#pinned { flex: none; overflow: hidden; }
+#lanes { flex: 1; min-height: 0; overflow-y: auto; }
+
+.bar {
+  position: relative;
+  flex: none;
+  height: 200px;
+  background: #171e2e;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.bar-label {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  z-index: 1;
+  font-size: 11px;
+  color: #8a93a6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+#summary-bar { cursor: crosshair; }
+#timeline-bar { cursor: grab; height: 100px; }
+#timeline-bar.panning { cursor: grabbing; }
+#sources-bar { cursor: copy; background: #0f2c1e; }
+#expenses-bar { cursor: copy; background: #331010; }
+
+#cursor-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  display: none;
+  z-index: 2;
+}
+
+/* Income sources */
+.source {
+  position: absolute;
+  height: 88px;
+  cursor: default;
+}
+.source::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  background: var(--color);
+  opacity: 0.6;
+}
+.source.inactive { opacity: 0.4; }
+
+.head, .tail {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: #232c40;
+  border: 1px solid var(--color);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: ew-resize;
+}
+.head { width: 120px; border-right-width: 4px; gap: 1px; }
+.tail { width: 120px; border-left-width: 4px; }
+
+.row { display: flex; align-items: center; gap: 4px; }
+
+.head input {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+.head input.name { flex: 1; min-width: 0; font-weight: 600; }
+.head input.amount {
+  width: 64px;
+  border-bottom: 1px dashed #556079;
+}
+.head input.initial { width: 80px; border-bottom: 1px dashed #556079; }
+.head input.pct, .head input.growth { width: 30px; border-bottom: 1px dashed #556079; }
+.head input.initial, .head input.pct, .head input.growth { -moz-appearance: textfield; appearance: textfield; }
+.head input.initial::-webkit-inner-spin-button,
+.head input.pct::-webkit-inner-spin-button,
+.head input.growth::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.source.investment .head, .source.investment .tail { border-style: dashed; }
+.head input:focus { outline: 1px solid var(--color); }
+.head input[type="checkbox"] { accent-color: var(--color); cursor: pointer; }
+
+.delete {
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.delete:hover { color: #e26d6d; }
+
+.date { color: #8a93a6; font-size: 11px; }
+.total { font-weight: 600; }
+.remaining { font-size: 11px; }
+
+/* Hover tooltip */
+#context-menu {
+  position: fixed;
+  z-index: 20;
+  padding: 4px;
+  background: #232c40;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+#context-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: #e6e9ef;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+#context-menu button:hover { background: #2d3852; }
+
+/* Project drawer */
+#drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#project-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 41;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: #171e2e;
+  border-right: 1px solid #3a4560;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.2s ease, visibility 0.2s;
+}
+body.drawer-open #drawer-backdrop { opacity: 1; pointer-events: auto; }
+body.drawer-open #project-drawer { transform: none; visibility: visible; }
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.drawer-head h2, #project-props h2 {
+  margin: 0;
+  font-size: 12px;
+  color: #8a93a6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#drawer-close {
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+#drawer-close:hover { color: #e6e9ef; }
+
+#project-new {
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+#project-new:hover { background: #2d3852; }
+
+#project-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.project {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+}
+.project:hover { background: #232c40; }
+.project.current { background: #232c40; border-left-color: #4e9af1; }
+.project-select {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.project.current .project-select { font-weight: 600; }
+.project-input {
+  flex: 1;
+  min-width: 0;
+  margin: 4px 6px;
+  padding: 3px 6px;
+  background: #0f1420;
+  border: 1px solid #4e9af1;
+  border-radius: 4px;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+.project-action {
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+}
+.project:hover .project-action, .project:focus-within .project-action { opacity: 1; }
+.project-action:hover { color: #e6e9ef; }
+.project-delete:hover { color: #e26d6d; }
+
+#project-props {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #3a4560;
+}
+.prop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: #8a93a6;
+}
+.prop input {
+  width: 72px;
+  padding: 4px 6px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+}
+#notice {
+  position: fixed;
+  z-index: 30;
+  max-width: 280px;
+  padding: 8px 12px;
+  background: #3a2f12;
+  border: 1px solid #f5c542;
+  border-radius: 6px;
+  color: #f5e6b8;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+#drag-label {
+  position: fixed;
+  z-index: 10;
+  padding: 4px 8px;
+  background: rgba(35, 44, 64, 0.96);
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: pre;
+  pointer-events: none;
+}
+#tooltip {
+  position: fixed;
+  z-index: 10;
+  min-width: 220px;
+  padding: 10px 12px;
+  background: rgba(35, 44, 64, 0.96);
+  border: 1px solid #3a4560;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+#tooltip-date { color: #8a93a6; }
+#tooltip-age { font-weight: 600; margin-top: 2px; }
+#tooltip-net { font-size: 16px; font-weight: 600; margin: 2px 0 4px; }
+#tooltip-net.negative { color: #f07c7c; }
+#tooltip-piggy { color: #f5c542; font-weight: 600; margin-bottom: 4px; }
+#tooltip-total { color: #4e9af1; }
+#tooltip-expenses { color: #f07c7c; }
+#tooltip-inflation { color: #8a93a6; margin-bottom: 8px; }
+
+.tooltip-body { display: flex; gap: 12px; align-items: center; }
+
+#tooltip-legend { list-style: none; margin: 0; padding: 0; }
+#tooltip-legend li { display: flex; align-items: center; gap: 6px; margin: 2px 0; white-space: nowrap; }
+#tooltip-legend .swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+#tooltip-legend .value { color: #8a93a6; margin-left: auto; padding-left: 8px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <h1>Income Timeline</h1>
+      <span class="crumb-sep">/</span>
+      <button type="button" id="project-name" title="Projects" aria-controls="project-drawer" aria-expanded="false"></button>
+    </div>
+    <div class="controls">
+      <label class="birth">Investment withdrawal tax rate
+        <input type="number" id="tax-rate" class="tax" min="0" max="100" step="1" value="0">%
+      </label>
+      <label class="birth">Inflation
+        <input type="number" id="inflation-rate" class="tax" min="0" max="100" step="0.1" value="0">%
+      </label>
+      <label class="birth">Inflation starting year
+        <input type="number" id="inflation-year" min="2020" max="2080" step="1" value="2020">
+      </label>
+      <button type="button" id="toggle-income" title="Activate/deactivate all income sources">Toggle income</button>
+      <button type="button" id="toggle-expenses" title="Activate/deactivate all expenses">Toggle expenses</button>
+    </div>
+  </header>
+
+  <main id="bars">
+    <div id="pinned">
+      <div id="summary-bar" class="bar">
+        <span class="bar-label">Monthly income &amp; expenses &mdash; hover for breakdown</span>
+        <canvas id="summary-canvas"></canvas>
+      </div>
+      <div id="timeline-bar" class="bar">
+        <span class="bar-label">Timeline &mdash; scroll to zoom, drag to pan</span>
+        <canvas id="timeline-canvas"></canvas>
+      </div>
+    </div>
+    <div id="lanes">
+      <div id="sources-bar" class="bar">
+        <span class="bar-label">Income sources &mdash; click to add, drag head/tail to resize</span>
+      </div>
+      <div id="expenses-bar" class="bar">
+        <span class="bar-label">Expense sources &mdash; click to add, drag head/tail to resize</span>
+      </div>
+    </div>
+    <div id="cursor-line"></div>
+  </main>
+
+  <div id="tooltip" hidden>
+    <div id="tooltip-date"></div>
+    <div id="tooltip-age" hidden></div>
+    <div id="tooltip-net"></div>
+    <div id="tooltip-piggy"></div>
+    <div id="tooltip-total"></div>
+    <div id="tooltip-expenses"></div>
+    <div id="tooltip-inflation"></div>
+    <div class="tooltip-body">
+      <svg id="tooltip-pie" viewBox="0 0 100 100" width="100" height="100"></svg>
+      <ul id="tooltip-legend"></ul>
+    </div>
+  </div>
+
+  <div id="drag-label" hidden></div>
+
+  <div id="notice" role="alert" hidden></div>
+
+  <div id="context-menu" hidden>
+    <button type="button" id="ctx-convert"></button>
+  </div>
+
+  <div id="drawer-backdrop"></div>
+  <aside id="project-drawer" aria-label="Projects">
+    <div class="drawer-head">
+      <h2>Projects</h2>
+      <button type="button" id="drawer-close" title="Close">&times;</button>
+    </div>
+    <button type="button" id="project-new">+ New project</button>
+    <ul id="project-list"></ul>
+    <section id="project-props" aria-label="Project properties">
+      <h2>Project properties</h2>
+      <label class="prop">Year of birth
+        <input type="number" id="birth-year" min="1900" max="2080" step="1" placeholder="e.g. 1985">
+      </label>
+      <div class="prop">Year range
+        <span>
+          <input type="number" id="start-year" min="2020" max="2079" step="1" aria-label="Start year">
+          &ndash;
+          <input type="number" id="end-year" min="2021" max="2080" step="1" aria-label="End year">
+        </span>
+      </div>
+    </section>
+  </aside>
+
+  <script>
+'use strict';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const BASE_YEAR = 2020;
+const END_YEAR = 2080;
+const MAX_MONTH = (END_YEAR - BASE_YEAR) * 12; // months are counted from Jan 2020
+const MIN_SPAN = 12;
+const HEAD_W = 120;
+const TAIL_W = 120;
+const LANE_H = 92;
+const LANES_TOP = 26;
+const BAR_H = 200;
+const COLORS = ['#5fd38d'];
+const EXPENSE_COLORS = ['#e05252'];
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const STORAGE_KEY = 'income-timeline-state';
+const PROJECTS_KEY = 'income-timeline-projects';
+const PROJECT_NAME_MAX = 60;
+const DEFAULT_INITIAL = 100000;
+const DEFAULT_WITHDRAW_PCT = 4;
+const DEFAULT_GROWTH_PCT = 5;
+
+const defaultState = () => ({
+  viewStart: 0, viewEnd: MAX_MONTH, sources: [], nextId: 1, birthYear: null, taxRate: 0,
+  inflationRate: 0, inflationYear: BASE_YEAR, startYear: BASE_YEAR, endYear: END_YEAR,
+});
+const state = defaultState();
+const projects = { list: [], activeId: null, nextId: 1 };
+const sourceEls = new Map();
+const laneOf = new Map();
+let dragging = false;
+
+const $ = (id) => document.getElementById(id);
+const barsEl = $('bars');
+const summaryBar = $('summary-bar');
+const summaryCanvas = $('summary-canvas');
+const timelineBar = $('timeline-bar');
+const timelineCanvas = $('timeline-canvas');
+const sourcesBar = $('sources-bar');
+const expensesBar = $('expenses-bar');
+const cursorLine = $('cursor-line');
+const tooltip = $('tooltip');
+const tooltipDate = $('tooltip-date');
+const tooltipAge = $('tooltip-age');
+const dragLabel = $('drag-label');
+const notice = $('notice');
+const tooltipTotal = $('tooltip-total');
+const tooltipExpenses = $('tooltip-expenses');
+const tooltipInflation = $('tooltip-inflation');
+const tooltipNet = $('tooltip-net');
+const tooltipPiggy = $('tooltip-piggy');
+const tooltipPie = $('tooltip-pie');
+const tooltipLegend = $('tooltip-legend');
+const contextMenu = $('context-menu');
+const ctxConvert = $('ctx-convert');
+const projectName = $('project-name');
+const projectList = $('project-list');
+
+const KINDS = {
+  income: { bar: sourcesBar, label: 'Income', colors: COLORS },
+  expense: { bar: expensesBar, label: 'Expense', colors: EXPENSE_COLORS },
+};
+const colorFor = (kind, id) => KINDS[kind].colors[(id - 1) % KINDS[kind].colors.length];
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const rangeStart = () => (state.startYear - BASE_YEAR) * 12;
+const rangeEnd = () => (state.endYear - BASE_YEAR) * 12;
+// Sources outside the project's year range are kept but hidden and ignored.
+const inRange = (s) => s.end > rangeStart() && s.start < rangeEnd();
+const span = () => state.viewEnd - state.viewStart;
+const barWidth = () => summaryBar.clientWidth;
+const monthToX = (m) => ((m - state.viewStart) / span()) * barWidth();
+const xToMonth = (x) => state.viewStart + (x / barWidth()) * span();
+const localX = (e, el) => e.clientX - el.getBoundingClientRect().left;
+const monthLabel = (m) => `${MONTHS[m % 12]} ${BASE_YEAR + Math.floor(m / 12)}`;
+const money = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const taxFactor = () => 1 - state.taxRate / 100;
+// Expenses step up once per calendar year after the inflation starting year.
+const inflationFactor = (m) => Math.pow(
+  1 + state.inflationRate / 100,
+  Math.max(0, BASE_YEAR + Math.floor(m / 12) - state.inflationYear),
+);
+// Default names start this way, so a source must be renamed before it can count.
+const canActivate = (s) => !/^(Expense|Income)/.test(s.name);
+
+// Each month the pot pays out (yearly % / 12) of its current balance, then the rest compounds at the yearly growth rate.
+function investmentRates(s) {
+  const withdraw = s.withdrawPct / 100 / 12;
+  const growth = Math.pow(1 + s.growthPct / 100, 1 / 12) - 1;
+  return { withdraw, ratio: (1 - withdraw) * (1 + growth) };
+}
+
+function amountAt(s, m) {
+  if (m < s.start || m >= s.end) return 0;
+  if (s.kind === 'expense') return s.monthly * inflationFactor(m);
+  if (!s.investment) return s.monthly;
+  const { withdraw, ratio } = investmentRates(s);
+  return s.initial * Math.pow(ratio, m - s.start) * withdraw * taxFactor();
+}
+
+const remainingBalance = (s) => s.initial * Math.pow(investmentRates(s).ratio, s.end - s.start);
+
+function sourceTotal(s) {
+  const months = s.end - s.start;
+  if (s.kind === 'expense') {
+    let total = 0;
+    for (let m = s.start; m < s.end; m++) total += amountAt(s, m);
+    return total;
+  }
+  if (!s.investment) return s.monthly * months;
+  const { withdraw, ratio } = investmentRates(s);
+  const series = Math.abs(1 - ratio) < 1e-12 ? months : (1 - Math.pow(ratio, months)) / (1 - ratio);
+  return s.initial * withdraw * series * taxFactor();
+}
+
+const monthlyTotal = (m, kind) => state.sources
+  .reduce((sum, s) => (s.kind === kind && s.active ? sum + amountAt(s, m) : sum), 0);
+
+// Surpluses go in; a deficit is withdrawn only if the balance can cover all of it, so it never goes negative.
+function computePiggyBank() {
+  const balance = new Float64Array(MAX_MONTH);
+  const covered = new Uint8Array(MAX_MONTH);
+  let saved = 0;
+  for (let m = rangeStart(); m < rangeEnd(); m++) {
+    const net = monthlyTotal(m, 'income') - monthlyTotal(m, 'expense');
+    if (net >= 0) {
+      saved += net;
+    } else if (saved >= -net) {
+      saved += net;
+      covered[m] = 1;
+    }
+    balance[m] = saved;
+  }
+  return { balance, covered };
+}
+
+let piggyBank = { balance: new Float64Array(MAX_MONTH), covered: new Uint8Array(MAX_MONTH) };
+
+// Only the birth year is known, so this is the age reached during that calendar year.
+function ageAt(m) {
+  if (state.birthYear === null) return null;
+  const age = BASE_YEAR + Math.floor(m / 12) - state.birthYear;
+  return age >= 0 ? age : null;
+}
+
+const validBirthYear = (y) => (Number.isInteger(y) && y >= 1900 && y <= 2080 ? y : null);
+const validTaxRate = (r) => (Number.isInteger(r) ? clamp(r, 0, 100) : 0);
+const validInflationRate = (r) => (Number.isFinite(r) ? clamp(r, 0, 100) : 0);
+const validInflationYear = (y) => (Number.isInteger(y) && y >= BASE_YEAR && y <= 2080 ? y : BASE_YEAR);
+
+// ---------- Persistence ----------
+
+function readJSON(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
+}
+
+function writeJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    // Storage may be full or disabled; the app keeps working in memory.
+    return false;
+  }
+}
+
+function removeStored(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Storage may be disabled.
+  }
+}
+
+function saveState() {
+  writeJSON(projectKey(projects.activeId), state);
+}
+
+// Replaces the current timeline with the active project's saved one.
+function loadState() {
+  for (const el of sourceEls.values()) el.root.remove();
+  sourceEls.clear();
+  laneOf.clear();
+  Object.assign(state, defaultState());
+
+  const saved = readJSON(projectKey(projects.activeId));
+  if (saved && typeof saved === 'object') applySavedState(saved);
+
+  for (const s of state.sources) sourceEls.set(s.id, createSourceEl(s));
+  $('birth-year').value = state.birthYear ?? '';
+  $('start-year').value = state.startYear;
+  $('end-year').value = state.endYear;
+  $('tax-rate').value = state.taxRate;
+  $('inflation-rate').value = state.inflationRate;
+  $('inflation-year').value = state.inflationYear;
+}
+
+function applySavedState(saved) {
+  const isInt = Number.isInteger;
+  const sources = Array.isArray(saved.sources) ? saved.sources : [];
+  state.sources = sources
+    .filter((s) => s && isInt(s.id) && s.id >= 1 && isInt(s.start) && isInt(s.end)
+      && s.start >= 0 && s.start < s.end && s.end <= MAX_MONTH && Number.isFinite(s.monthly))
+    .map((s) => {
+      const kind = s.kind === 'expense' ? 'expense' : 'income';
+      const name = String(s.name ?? '');
+      return {
+        id: s.id,
+        kind,
+        name,
+        monthly: Math.max(0, s.monthly),
+        start: s.start,
+        end: s.end,
+        active: s.active !== false && canActivate({ name }),
+        color: colorFor(kind, s.id),
+        investment: kind === 'income' && s.investment === true,
+        initial: Number.isFinite(s.initial) ? Math.max(0, s.initial) : DEFAULT_INITIAL,
+        withdrawPct: Number.isFinite(s.withdrawPct) ? clamp(s.withdrawPct, 0, 100) : DEFAULT_WITHDRAW_PCT,
+        growthPct: Number.isFinite(s.growthPct) ? clamp(s.growthPct, -100, 100) : DEFAULT_GROWTH_PCT,
+      };
+    });
+
+  const maxId = state.sources.reduce((max, s) => Math.max(max, s.id), 0);
+  state.nextId = Math.max(maxId + 1, isInt(saved.nextId) ? saved.nextId : 1);
+  state.birthYear = validBirthYear(saved.birthYear);
+  state.taxRate = validTaxRate(saved.taxRate);
+  state.inflationRate = validInflationRate(saved.inflationRate);
+  state.inflationYear = validInflationYear(saved.inflationYear);
+  if (isInt(saved.startYear)) state.startYear = clamp(saved.startYear, BASE_YEAR, END_YEAR - 1);
+  if (isInt(saved.endYear)) state.endYear = clamp(saved.endYear, state.startYear + 1, END_YEAR);
+
+  state.viewStart = rangeStart();
+  state.viewEnd = rangeEnd();
+  if (Number.isFinite(saved.viewStart) && Number.isFinite(saved.viewEnd)) {
+    const viewSpan = clamp(saved.viewEnd - saved.viewStart, MIN_SPAN, rangeEnd() - rangeStart());
+    state.viewStart = clamp(saved.viewStart, rangeStart(), rangeEnd() - viewSpan);
+    state.viewEnd = state.viewStart + viewSpan;
+  }
+}
+
+// ---------- Projects ----------
+
+const projectKey = (id) => `${STORAGE_KEY}:${id}`;
+const saveProjects = () => writeJSON(PROJECTS_KEY, projects);
+
+function addProject() {
+  const id = projects.nextId++;
+  const p = { id, name: `Project ${id}` };
+  projects.list.push(p);
+  return p;
+}
+
+function loadProjects() {
+  const saved = readJSON(PROJECTS_KEY);
+  const list = Array.isArray(saved?.list) ? saved.list : [];
+  projects.list = list
+    .filter((p) => p && Number.isInteger(p.id) && p.id >= 1 && typeof p.name === 'string')
+    .map((p) => ({ id: p.id, name: p.name.slice(0, PROJECT_NAME_MAX) || `Project ${p.id}` }));
+  const maxId = projects.list.reduce((max, p) => Math.max(max, p.id), 0);
+  projects.nextId = Math.max(maxId + 1, Number.isInteger(saved?.nextId) ? saved.nextId : 1);
+
+  if (!projects.list.length) {
+    const p = addProject();
+    // The timeline saved before projects existed becomes the first project.
+    const legacy = readJSON(STORAGE_KEY);
+    if (legacy && writeJSON(projectKey(p.id), legacy)) removeStored(STORAGE_KEY);
+  }
+  projects.activeId = projects.list.some((p) => p.id === saved?.activeId)
+    ? saved.activeId
+    : projects.list[0].id;
+  saveProjects();
+}
+
+function selectProject(id) {
+  projects.activeId = id;
+  saveProjects();
+  loadState();
+  render();
+  renderProjects();
+}
+
+function createProject() {
+  const p = addProject();
+  selectProject(p.id);
+  startRename(projectList.lastElementChild, p);
+}
+
+function deleteProject(p) {
+  if (!confirm(`Delete project "${p.name}"? This cannot be undone.`)) return;
+  projects.list = projects.list.filter((x) => x !== p);
+  removeStored(projectKey(p.id));
+  if (!projects.list.length) addProject();
+  if (p.id === projects.activeId) {
+    selectProject(projects.list[0].id);
+  } else {
+    saveProjects();
+    renderProjects();
+  }
+}
+
+function startRename(li, p) {
+  const nameBtn = li.querySelector('.project-select');
+  if (!nameBtn) return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'project-input';
+  input.maxLength = PROJECT_NAME_MAX;
+  input.value = p.name;
+  nameBtn.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const finish = (commit) => {
+    if (done) return;
+    done = true;
+    const name = input.value.trim();
+    if (commit && name && name !== p.name) {
+      p.name = name;
+      saveProjects();
+      if (p.id === projects.activeId) projectName.textContent = name;
+    }
+    input.replaceWith(projectSelectButton(p));
+  };
+  input.addEventListener('blur', () => finish(true));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      finish(false);
+    }
+  });
+}
+
+function drawerButton(className, text, title, onClick) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = className;
+  btn.textContent = text;
+  btn.title = title;
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+const projectSelectButton = (p) => drawerButton('project-select', p.name, p.name, () => {
+  if (p.id !== projects.activeId) selectProject(p.id);
+  setDrawer(false);
+});
+
+function renderProjects() {
+  projectName.textContent = projects.list.find((p) => p.id === projects.activeId).name;
+  projectList.replaceChildren(...projects.list.map((p) => {
+    const li = document.createElement('li');
+    li.className = p.id === projects.activeId ? 'project current' : 'project';
+    li.append(
+      projectSelectButton(p),
+      drawerButton('project-action', '\u270E', 'Rename', () => startRename(li, p)),
+      drawerButton('project-action project-delete', '\u00D7', 'Delete', () => deleteProject(p)),
+    );
+    return li;
+  }));
+}
+
+function setDrawer(open) {
+  document.body.classList.toggle('drawer-open', open);
+  projectName.setAttribute('aria-expanded', String(open));
+}
+
+// ---------- View (zoom / pan) ----------
+
+function setView(start, newSpan) {
+  newSpan = clamp(newSpan, MIN_SPAN, rangeEnd() - rangeStart());
+  start = clamp(start, rangeStart(), rangeEnd() - newSpan);
+  state.viewStart = start;
+  state.viewEnd = start + newSpan;
+  render();
+}
+
+function zoomAt(factor, anchorMonth) {
+  const newSpan = clamp(span() * factor, MIN_SPAN, rangeEnd() - rangeStart());
+  const ratio = (anchorMonth - state.viewStart) / span();
+  setView(anchorMonth - ratio * newSpan, newSpan);
+}
+
+// ---------- Drawing ----------
+
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+
+function tickStep() {
+  const pxPerMonth = barWidth() / span();
+  return [1, 3, 6, 12, 24, 60, 120].find((s) => s * pxPerMonth >= 70) ?? 120;
+}
+
+function drawTimeline() {
+  const { ctx, w, h } = setupCanvas(timelineCanvas);
+  const pxPerYear = (12 * w) / span();
+
+  if (pxPerYear >= 6) {
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    for (let y = Math.floor(state.viewStart / 12); y * 12 < state.viewEnd; y++) {
+      if (y % 2 === 0) ctx.fillRect(monthToX(y * 12), 0, pxPerYear, h);
+    }
+  }
+
+  const mid = h / 2;
+  ctx.strokeStyle = '#3a4560';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, mid + 0.5);
+  ctx.lineTo(w, mid + 0.5);
+  ctx.stroke();
+
+  const step = tickStep();
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let m = Math.ceil(state.viewStart / step) * step; m <= state.viewEnd; m += step) {
+    const x = Math.round(monthToX(m)) + 0.5;
+    const isYear = m % 12 === 0;
+    const len = isYear ? 14 : 8;
+    ctx.strokeStyle = isYear ? '#8a93a6' : '#556079';
+    ctx.beginPath();
+    ctx.moveTo(x, mid - len);
+    ctx.lineTo(x, mid + len);
+    ctx.stroke();
+    ctx.fillStyle = isYear ? '#e6e9ef' : '#8a93a6';
+    ctx.fillText(isYear ? String(BASE_YEAR + m / 12) : MONTHS[m % 12], x, mid + 18);
+  }
+}
+
+let hatch = null;
+
+// Diagonal stripes for deficits the piggy bank cannot cover; segments at the corners make the tile seamless.
+function hatchTile() {
+  if (hatch) return hatch;
+  const size = 8;
+  hatch = document.createElement('canvas');
+  hatch.width = size;
+  hatch.height = size;
+  const c = hatch.getContext('2d');
+  c.strokeStyle = '#e05252';
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(0, size);
+  c.lineTo(size, 0);
+  c.moveTo(-1, 1);
+  c.lineTo(1, -1);
+  c.moveTo(size - 1, size + 1);
+  c.lineTo(size + 1, size - 1);
+  c.stroke();
+  return hatch;
+}
+
+function drawSummary() {
+  const { ctx, w, h } = setupCanvas(summaryCanvas);
+  const first = Math.max(rangeStart(), Math.floor(state.viewStart));
+  const last = Math.min(rangeEnd(), Math.ceil(state.viewEnd));
+
+  const step = tickStep();
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  for (let m = Math.ceil(state.viewStart / step) * step; m <= state.viewEnd; m += step) {
+    const x = Math.round(monthToX(m)) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+
+  const income = [];
+  const expenses = [];
+  for (let m = first; m < last; m++) {
+    income.push(monthlyTotal(m, 'income'));
+    expenses.push(monthlyTotal(m, 'expense'));
+  }
+  const max = Math.max(0, ...income, ...expenses);
+  if (!max) return;
+
+  const scale = (h - 32) / max;
+  const drawSteps = (totals, fill, stroke) => {
+    ctx.beginPath();
+    ctx.moveTo(monthToX(first), h);
+    totals.forEach((t, i) => {
+      const y = h - t * scale;
+      ctx.lineTo(monthToX(first + i), y);
+      ctx.lineTo(monthToX(first + i + 1), y);
+    });
+    ctx.lineTo(monthToX(last), h);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.stroke();
+  };
+  drawSteps(income, 'rgba(78,154,241,0.25)', '#4e9af1');
+  drawSteps(expenses, 'rgba(224,82,82,0.2)', '#e05252');
+
+  ctx.fillStyle = 'rgba(245,197,66,0.55)';
+  for (let i = 0; i < income.length; i++) {
+    if (!piggyBank.covered[first + i]) continue;
+    const x0 = monthToX(first + i);
+    const top = h - expenses[i] * scale;
+    ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
+  }
+
+  ctx.fillStyle = ctx.createPattern(hatchTile(), 'repeat');
+  for (let i = 0; i < income.length; i++) {
+    if (expenses[i] <= income[i] || piggyBank.covered[first + i]) continue;
+    const x0 = monthToX(first + i);
+    const top = h - expenses[i] * scale;
+    ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
+  }
+
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.fillStyle = '#8a93a6';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`peak ${money(max)}/mo`, w - 8, 6);
+}
+
+// ---------- Income & expense sources ----------
+
+function addSource(kind, month) {
+  const id = state.nextId++;
+  const start = clamp(month, rangeStart(), rangeEnd() - 1);
+  const s = {
+    id,
+    kind,
+    name: `${KINDS[kind].label} ${id}`,
+    monthly: 1000,
+    start,
+    end: start + 1,
+    active: false,
+    color: colorFor(kind, id),
+    investment: false,
+    initial: DEFAULT_INITIAL,
+    withdrawPct: DEFAULT_WITHDRAW_PCT,
+    growthPct: DEFAULT_GROWTH_PCT,
+  };
+  state.sources.push(s);
+  sourceEls.set(id, createSourceEl(s));
+  render();
+}
+
+function removeSource(id) {
+  state.sources = state.sources.filter((s) => s.id !== id);
+  sourceEls.get(id).root.remove();
+  sourceEls.delete(id);
+  laneOf.delete(id);
+  render();
+}
+
+function toggleInvestment(s) {
+  s.investment = !s.investment;
+  sourceEls.get(s.id).root.remove();
+  sourceEls.set(s.id, createSourceEl(s));
+  render();
+}
+
+function createSourceEl(s) {
+  const root = document.createElement('div');
+  root.className = s.investment ? 'source investment' : 'source';
+  root.dataset.id = s.id;
+  root.style.setProperty('--color', s.color);
+  const amountRows = s.investment
+    ? `<div class="row">$<input type="number" class="initial" min="0" step="1000" title="Initial amount"></div>
+       <div class="row"><input type="number" class="pct" min="0" max="100" step="0.5" title="Yearly withdrawal % of current balance">% draw/yr</div>
+       <div class="row"><input type="number" class="growth" min="-100" max="100" step="0.5" title="Yearly growth %">% growth/yr</div>`
+    : '<div class="row">$<input type="number" class="amount" min="0" step="50">/mo</div>';
+  root.innerHTML = `
+    <div class="head">
+      <div class="row">
+        <input type="checkbox" class="active" title="Active">
+        <input type="text" class="name" maxlength="40">
+        <button type="button" class="delete" title="Remove">&times;</button>
+      </div>
+      ${amountRows}
+      <div class="date start"></div>
+    </div>
+    <div class="tail">
+      <div class="total"></div>
+      ${s.investment ? '<div class="remaining"></div>' : ''}
+      <div class="date end"></div>
+    </div>`;
+
+  const q = (sel) => root.querySelector(sel);
+  q('.active').checked = s.active;
+  q('.name').value = s.name;
+
+  q('.active').addEventListener('change', (e) => {
+    if (e.target.checked && !canActivate(s)) {
+      e.target.checked = false;
+      showNotice(e.target, 'Rename this item before activating it. Names starting with "Income" or "Expense" cannot be activated.');
+      return;
+    }
+    s.active = e.target.checked;
+    render();
+  });
+  q('.name').addEventListener('input', (e) => {
+    s.name = e.target.value;
+    if (s.active && !canActivate(s)) {
+      s.active = false;
+      q('.active').checked = false;
+      render();
+    } else {
+      saveState();
+    }
+  });
+  q('.delete').addEventListener('click', () => removeSource(s.id));
+  if (s.investment) {
+    q('.initial').value = s.initial;
+    q('.pct').value = s.withdrawPct;
+    q('.growth').value = s.growthPct;
+    q('.initial').addEventListener('input', (e) => { s.initial = Math.max(0, Number(e.target.value) || 0); render(); });
+    q('.pct').addEventListener('input', (e) => { s.withdrawPct = clamp(Number(e.target.value) || 0, 0, 100); render(); });
+    q('.growth').addEventListener('input', (e) => { s.growthPct = clamp(Number(e.target.value) || 0, -100, 100); render(); });
+  } else {
+    q('.amount').value = s.monthly;
+    q('.amount').addEventListener('input', (e) => { s.monthly = Math.max(0, Number(e.target.value) || 0); render(); });
+  }
+  if (s.kind === 'income') root.addEventListener('contextmenu', (e) => openContextMenu(e, s));
+
+  const refs = {
+    root,
+    head: q('.head'),
+    tail: q('.tail'),
+    startLabel: q('.date.start'),
+    endLabel: q('.date.end'),
+    totalLabel: q('.total'),
+    remainingLabel: q('.remaining'),
+    activeBox: q('.active'),
+  };
+  enableEdgeDrag(refs.head, s, 'start');
+  enableEdgeDrag(refs.tail, s, 'end');
+  KINDS[s.kind].bar.appendChild(root);
+  return refs;
+}
+
+function enableEdgeDrag(handle, s, edge) {
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.target.closest('input, button')) return;
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    dragging = true;
+    const originX = e.clientX;
+    const originMonth = s[edge];
+
+    const onMove = (ev) => {
+      const m = Math.round(originMonth + ((ev.clientX - originX) / barWidth()) * span());
+      if (edge === 'start') s.start = clamp(m, rangeStart(), s.end - 1);
+      else s.end = clamp(m, s.start + 1, rangeEnd());
+      render();
+      showDragLabel(ev, edge === 'start' ? s.start : s.end - 1, s);
+    };
+    const onUp = () => {
+      dragging = false;
+      dragLabel.hidden = true;
+      render();
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  });
+}
+
+function layoutSources(kind) {
+  const sources = state.sources.filter((s) => s.kind === kind);
+  for (const s of sources) sourceEls.get(s.id).root.hidden = !inRange(s);
+  const placed = sources
+    .filter(inRange)
+    .map((s) => {
+      // Head sits left of the start month, tail sits right of the end month.
+      const x0 = monthToX(s.start) - HEAD_W;
+      return { s, x0, x1: monthToX(s.end) + TAIL_W };
+    })
+    .sort((a, b) => a.x0 - b.x0 || a.s.id - b.s.id);
+
+  // Lanes are frozen while dragging; otherwise each source keeps its previous lane unless it now overlaps.
+  const laneEnds = [];
+  const isFree = (lane, x0) => laneEnds[lane] === undefined || laneEnds[lane] + 6 <= x0;
+  for (const p of placed) {
+    const prev = laneOf.get(p.s.id);
+    let lane = prev;
+    if (prev === undefined || (!dragging && !isFree(prev, p.x0))) {
+      lane = 0;
+      while (!isFree(lane, p.x0)) lane++;
+    }
+    laneOf.set(p.s.id, lane);
+    laneEnds[lane] = Math.max(laneEnds[lane] ?? -Infinity, p.x1);
+    positionSource(p, lane);
+  }
+  KINDS[kind].bar.style.height = `${Math.max(BAR_H, LANES_TOP + laneEnds.length * LANE_H + 8)}px`;
+}
+
+function positionSource({ s, x0, x1 }, lane) {
+  const el = sourceEls.get(s.id);
+  const width = x1 - x0;
+  el.root.style.left = `${x0}px`;
+  el.root.style.width = `${width}px`;
+  el.root.style.top = `${LANES_TOP + lane * LANE_H}px`;
+  el.root.classList.toggle('inactive', !s.active);
+  el.head.style.left = '0px';
+  el.tail.style.left = `${width - TAIL_W}px`;
+
+  el.startLabel.textContent = monthLabel(s.start);
+  el.endLabel.textContent = `to ${monthLabel(s.end - 1)}`;
+  el.totalLabel.textContent = money(sourceTotal(s));
+  if (el.remainingLabel) el.remainingLabel.textContent = `Remaining ${money(remainingBalance(s))}`;
+}
+
+// ---------- Context menu ----------
+
+let menuSource = null;
+
+function openContextMenu(e, s) {
+  e.preventDefault();
+  menuSource = s;
+  ctxConvert.textContent = s.investment ? 'Convert to income' : 'Convert to investment';
+  contextMenu.hidden = false;
+  contextMenu.style.left = `${Math.min(e.clientX, window.innerWidth - contextMenu.offsetWidth)}px`;
+  contextMenu.style.top = `${Math.min(e.clientY, window.innerHeight - contextMenu.offsetHeight)}px`;
+}
+
+function closeContextMenu() {
+  contextMenu.hidden = true;
+  menuSource = null;
+}
+
+// ---------- Hover tooltip ----------
+
+function renderPie(slices, total) {
+  tooltipPie.replaceChildren();
+  tooltipPie.style.display = total ? '' : 'none';
+  if (!total) return;
+
+  const c = 50;
+  const r = 48;
+  if (slices.length === 1) {
+    const circle = document.createElementNS(SVG_NS, 'circle');
+    circle.setAttribute('cx', c);
+    circle.setAttribute('cy', c);
+    circle.setAttribute('r', r);
+    circle.setAttribute('fill', slices[0].color);
+    tooltipPie.appendChild(circle);
+    return;
+  }
+
+  let angle = -Math.PI / 2;
+  for (const s of slices) {
+    const sweep = (s.value / total) * 2 * Math.PI;
+    const end = angle + sweep;
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', [
+      `M${c},${c}`,
+      `L${c + r * Math.cos(angle)},${c + r * Math.sin(angle)}`,
+      `A${r},${r} 0 ${sweep > Math.PI ? 1 : 0} 1 ${c + r * Math.cos(end)},${c + r * Math.sin(end)}`,
+      'Z',
+    ].join(' '));
+    path.setAttribute('fill', s.color);
+    path.setAttribute('stroke', '#232c40');
+    tooltipPie.appendChild(path);
+    angle = end;
+  }
+}
+
+function renderLegend(slices, total) {
+  if (!slices.length) {
+    const li = document.createElement('li');
+    li.textContent = 'No active income';
+    tooltipLegend.replaceChildren(li);
+    return;
+  }
+  tooltipLegend.replaceChildren(...slices.map((s) => {
+    const li = document.createElement('li');
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch';
+    swatch.style.background = s.color;
+    const name = document.createElement('span');
+    name.textContent = s.name || '(unnamed)';
+    const value = document.createElement('span');
+    value.className = 'value';
+    value.textContent = `${money(s.value)} · ${((s.value / total) * 100).toFixed(1)}%`;
+    li.append(swatch, name, value);
+    return li;
+  }));
+}
+
+function showTooltip(e) {
+  const m = clamp(Math.floor(xToMonth(localX(e, summaryBar))), rangeStart(), rangeEnd() - 1);
+  const slices = state.sources
+    .filter((s) => s.kind === 'income' && s.active)
+    .map((s) => ({ name: s.name, color: s.color, value: amountAt(s, m) }))
+    .filter((slice) => slice.value > 0);
+  const total = slices.reduce((sum, slice) => sum + slice.value, 0);
+  const expenses = monthlyTotal(m, 'expense');
+  const net = total - expenses;
+
+  tooltipDate.textContent = monthLabel(m);
+  const age = ageAt(m);
+  tooltipAge.hidden = age === null;
+  tooltipAge.textContent = `Age ${age}`;
+  tooltipTotal.textContent = `Income ${money(total)} / month`;
+  tooltipExpenses.textContent = `Expenses ${money(expenses)} / month`;
+  tooltipInflation.textContent = `Inflation multiplier ×${inflationFactor(m).toFixed(3)}`;
+  const yearStart = m - (m % 12);
+  let yearlyIncome = 0;
+  for (let i = yearStart; i < yearStart + 12; i++) yearlyIncome += monthlyTotal(i, 'income');
+  tooltipNet.textContent = `Net ${money(net)} / month (Yearly ${money(yearlyIncome)})`;
+  tooltipNet.classList.toggle('negative', net < 0);
+  tooltipPiggy.textContent = `Piggy bank ${money(piggyBank.balance[m])}`
+    + (piggyBank.covered[m] ? ` (covered ${money(-net)})` : '');
+  renderPie(slices, total);
+  renderLegend(slices, total);
+  tooltip.hidden = false;
+  placeAtMouse(tooltip, e);
+}
+
+function showDragLabel(e, m, s = null) {
+  const age = ageAt(m);
+  let text = age === null ? monthLabel(m) : `Age ${age} · ${monthLabel(m)}`;
+  // Head and tail sit outside the source's months, so clamp to its nearest month.
+  if (s) text += `\n${s.name || '(unnamed)'}: Effective ${money(amountAt(s, clamp(m, s.start, s.end - 1)))} / month`;
+  dragLabel.textContent = text;
+  dragLabel.hidden = false;
+  placeAtMouse(dragLabel, e);
+}
+
+function placeAtMouse(el, e) {
+  const pad = 16;
+  let left = e.clientX + pad;
+  let top = e.clientY + pad;
+  if (left + el.offsetWidth > window.innerWidth) left = e.clientX - pad - el.offsetWidth;
+  if (top + el.offsetHeight > window.innerHeight) top = e.clientY - pad - el.offsetHeight;
+  el.style.left = `${left}px`;
+  el.style.top = `${top}px`;
+}
+
+// ---------- Render & events ----------
+
+let noticeTimer;
+
+function showNotice(anchor, text) {
+  const rect = anchor.getBoundingClientRect();
+  notice.textContent = text;
+  notice.hidden = false;
+  notice.style.left = `${Math.min(rect.left, window.innerWidth - notice.offsetWidth - 8)}px`;
+  notice.style.top = `${Math.max(8, rect.top - notice.offsetHeight - 8)}px`;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { notice.hidden = true; }, 4000);
+}
+
+function render() {
+  piggyBank = computePiggyBank();
+  drawTimeline();
+  drawSummary();
+  for (const kind of Object.keys(KINDS)) layoutSources(kind);
+  saveState();
+}
+
+timelineBar.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zoomAt(e.deltaY > 0 ? 1.2 : 1 / 1.2, xToMonth(localX(e, timelineBar)));
+}, { passive: false });
+
+timelineBar.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  timelineBar.setPointerCapture(e.pointerId);
+  timelineBar.classList.add('panning');
+  const originX = e.clientX;
+  const originStart = state.viewStart;
+
+  const onMove = (ev) => setView(originStart - ((ev.clientX - originX) / barWidth()) * span(), span());
+  const onUp = () => {
+    timelineBar.classList.remove('panning');
+    timelineBar.removeEventListener('pointermove', onMove);
+    timelineBar.removeEventListener('pointerup', onUp);
+    timelineBar.removeEventListener('pointercancel', onUp);
+  };
+  timelineBar.addEventListener('pointermove', onMove);
+  timelineBar.addEventListener('pointerup', onUp);
+  timelineBar.addEventListener('pointercancel', onUp);
+});
+
+for (const [kind, { bar }] of Object.entries(KINDS)) {
+  let wasEditing = false;
+  // pointerdown fires before focus moves, so this still sees the edit box.
+  bar.addEventListener('pointerdown', () => {
+    wasEditing = Boolean(document.activeElement?.matches('.source input:not([type="checkbox"])'));
+  });
+  bar.addEventListener('click', (e) => {
+    if (wasEditing || e.target.closest('.source')) return;
+    addSource(kind, Math.floor(xToMonth(localX(e, bar))));
+  });
+}
+
+summaryBar.addEventListener('pointermove', showTooltip);
+summaryBar.addEventListener('pointerleave', () => { tooltip.hidden = true; });
+
+for (const bar of [timelineBar, sourcesBar, expensesBar]) {
+  bar.addEventListener('pointermove', (e) => {
+    if (dragging) return;
+    const el = e.target.closest('.source');
+    const s = el ? state.sources.find((src) => src.id === Number(el.dataset.id)) : null;
+    showDragLabel(e, clamp(Math.floor(xToMonth(localX(e, bar))), rangeStart(), rangeEnd() - 1), s);
+  });
+  bar.addEventListener('pointerleave', () => { if (!dragging) dragLabel.hidden = true; });
+}
+
+barsEl.addEventListener('pointermove', (e) => {
+  cursorLine.style.left = `${localX(e, barsEl)}px`;
+  cursorLine.style.display = 'block';
+});
+barsEl.addEventListener('pointerleave', () => { cursorLine.style.display = 'none'; });
+
+// Turns everything off if any are on; otherwise turns all on.
+function toggleAll(kind) {
+  const sources = state.sources.filter((s) => s.kind === kind);
+  const active = !sources.some((s) => s.active);
+  for (const s of sources) {
+    s.active = active && canActivate(s);
+    sourceEls.get(s.id).activeBox.checked = s.active;
+  }
+  render();
+}
+$('toggle-income').addEventListener('click', () => toggleAll('income'));
+$('toggle-expenses').addEventListener('click', () => toggleAll('expense'));
+$('birth-year').addEventListener('input', (e) => {
+  state.birthYear = validBirthYear(Number.parseInt(e.target.value, 10));
+  saveState();
+});
+
+// Runs on change, not input, so half-typed years don't reshape the timeline.
+function changeYearRange(edge, value) {
+  const y = Number.parseInt(value, 10);
+  if (Number.isInteger(y)) {
+    if (edge === 'start') {
+      state.startYear = clamp(y, BASE_YEAR, END_YEAR - 1);
+      state.endYear = Math.max(state.endYear, state.startYear + 1);
+    } else {
+      state.endYear = clamp(y, BASE_YEAR + 1, END_YEAR);
+      state.startYear = Math.min(state.startYear, state.endYear - 1);
+    }
+    setView(rangeStart(), rangeEnd() - rangeStart());
+  }
+  $('start-year').value = state.startYear;
+  $('end-year').value = state.endYear;
+}
+$('start-year').addEventListener('change', (e) => changeYearRange('start', e.target.value));
+$('end-year').addEventListener('change', (e) => changeYearRange('end', e.target.value));
+$('tax-rate').addEventListener('input', (e) => {
+  state.taxRate = validTaxRate(Number.parseInt(e.target.value, 10));
+  render();
+});
+$('inflation-rate').addEventListener('input', (e) => {
+  state.inflationRate = validInflationRate(Number.parseFloat(e.target.value));
+  render();
+});
+$('inflation-year').addEventListener('input', (e) => {
+  state.inflationYear = validInflationYear(Number.parseInt(e.target.value, 10));
+  render();
+});
+ctxConvert.addEventListener('click', () => {
+  if (menuSource) toggleInvestment(menuSource);
+  closeContextMenu();
+});
+document.addEventListener('pointerdown', (e) => {
+  if (!contextMenu.contains(e.target)) closeContextMenu();
+  if (!e.target.matches('.active')) notice.hidden = true;
+});
+projectName.addEventListener('click', () => setDrawer(true));
+$('drawer-backdrop').addEventListener('click', () => setDrawer(false));
+$('drawer-close').addEventListener('click', () => setDrawer(false));
+$('project-new').addEventListener('click', createProject);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeContextMenu();
+    setDrawer(false);
+  }
+  // Values are already applied on input, so Enter only needs to drop focus.
+  if (e.key === 'Enter' && e.target.matches('input:not([type="checkbox"])')) e.target.blur();
+});
+window.addEventListener('resize', render);
+
+loadProjects();
+loadState();
+renderProjects();
+render();
+</script>
+</body>
+</html>
