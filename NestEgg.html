@@ -269,6 +269,8 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 body.drawer-open #drawer-backdrop { opacity: 1; pointer-events: auto; }
 body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
+.version { margin-bottom: 6px; font-size: 11px; color: #556079; }
+
 .drawer-head {
   display: flex;
   align-items: center;
@@ -512,6 +514,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
   <div id="drawer-backdrop"></div>
   <aside id="project-drawer" aria-label="Projects">
+    <span class="version">v1.0</span>
     <div class="drawer-head">
       <h2>Projects</h2>
       <button type="button" id="drawer-close" title="Close">&times;</button>
