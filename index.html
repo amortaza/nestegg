@@ -25,18 +25,15 @@ header {
   padding: 12px 20px;
 }
 
-h1 { font-size: 18px; margin: 0; white-space: nowrap; }
-
 .title { flex: none; display: flex; align-items: center; gap: 8px; margin-right: 16px; }
-.crumb-sep { color: #3a4560; font-size: 18px; }
 #project-name {
   max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 3px 8px;
-  background: none;
-  border: 1px solid transparent;
+  background: #263150;
+  border: 1px solid #3d4a6b;
   border-radius: 4px;
   color: #4e9af1;
   font: inherit;
@@ -44,7 +41,42 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
   font-weight: 600;
   cursor: pointer;
 }
-#project-name:hover { background: #232c40; border-color: #3a4560; }
+#project-name:hover { background: #313d61; border-color: #4e5d84; }
+
+#save-note {
+  padding: 0;
+  background: none;
+  border: none;
+  color: #f5c542;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#save-note:hover { text-decoration: underline dotted; }
+
+#save-info {
+  width: 400px;
+  padding: 16px;
+  background: #171e2e;
+  color: #e6e9ef;
+  border: 1px solid #f5c542;
+  border-top-width: 4px;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  line-height: 1.5;
+}
+#save-info::backdrop { background: rgba(0, 0, 0, 0.45); }
+#save-info h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #f5c542;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#save-info p, #save-info ul { margin: 0 0 8px; }
+#save-info ul { padding-left: 20px; }
 
 .controls { display: flex; gap: 6px; align-items: center; }
 
@@ -121,6 +153,32 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
   pointer-events: none;
 }
 
+.bar-head {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.bar-head .bar-label { position: static; }
+.bar-head button {
+  padding: 2px 8px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid var(--color);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.bar-head button:hover { background: #2d3852; }
+#sources-bar .bar-head { --color: #5fd38d; }
+#expenses-bar .bar-head { --color: #e05252; }
+
 #summary-bar { cursor: crosshair; }
 #timeline-bar { cursor: grab; height: 100px; }
 #timeline-bar.panning { cursor: grabbing; }
@@ -172,8 +230,17 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
   font-size: 12px;
   cursor: ew-resize;
 }
-.head { width: 120px; border-right-width: 4px; gap: 1px; }
-.tail { width: 120px; border-left-width: 4px; }
+.head {
+  width: 120px;
+  border-right-width: 4px;
+  border-left-color: color-mix(in srgb, var(--color) 45%, black);
+  gap: 1px;
+}
+.tail {
+  width: 120px;
+  border-left-width: 4px;
+  border-right-color: color-mix(in srgb, var(--color) 45%, black);
+}
 
 .row { display: flex; align-items: center; gap: 4px; }
 
@@ -191,8 +258,7 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 }
 .head input.initial { width: 80px; border-bottom: 1px dashed #556079; }
 .head input.pct, .head input.growth { width: 30px; border-bottom: 1px dashed #556079; }
-.head input.initial, .head input.pct, .head input.growth { -moz-appearance: textfield; appearance: textfield; }
-.head input.initial::-webkit-inner-spin-button,
+.head input.pct, .head input.growth { -moz-appearance: textfield; appearance: textfield; }
 .head input.pct::-webkit-inner-spin-button,
 .head input.growth::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .source.investment .head, .source.investment .tail { border-style: dashed; }
@@ -239,6 +305,35 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 }
 #context-menu button:hover { background: #2d3852; }
 
+/* New source dialog */
+#source-dialog {
+  width: 320px;
+  padding: 16px;
+  background: #171e2e;
+  color: #e6e9ef;
+  color-scheme: dark;
+  border: 1px solid var(--color);
+  border-top-width: 4px;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+#source-dialog.income { background: #0f2c1e; }
+#source-dialog.expense { background: #331010; }
+#source-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+#source-dialog form { display: flex; flex-direction: column; gap: 8px; }
+#source-dialog h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#source-dialog .prop input { width: 160px; }
+#source-dialog .prop input.amount { width: 148px; margin-left: 4px; }
+#source-dialog .prop input:focus { outline: 1px solid var(--color); }
+#source-dialog .hint { margin: -4px 0 0; font-size: 11px; color: #8a93a6; }
+#source-dialog .prop-actions button[type="submit"] { border-color: var(--color); }
+
 /* Project drawer */
 #drawer-backdrop {
   position: fixed;
@@ -269,7 +364,7 @@ h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 body.drawer-open #drawer-backdrop { opacity: 1; pointer-events: auto; }
 body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
-.version { margin-bottom: 6px; font-size: 11px; color: #556079; }
+.version { margin-bottom: 6px; font-size: 11px; color: #6f7a93; }
 
 .drawer-head {
   display: flex;
@@ -449,9 +544,8 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 <body>
   <header>
     <div class="title">
-      <h1>Income Timeline</h1>
-      <span class="crumb-sep">/</span>
       <button type="button" id="project-name" title="Projects" aria-controls="project-drawer" aria-expanded="false"></button>
+      <button type="button" id="save-note" title="Why export?" hidden>Saved to this browser &mdash; export to keep it safe &#9432;</button>
     </div>
     <div class="controls">
       <label class="birth">Investment withdrawal tax rate
@@ -463,8 +557,6 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       <label class="birth">Inflation starting year
         <input type="number" id="inflation-year" min="2020" max="2080" step="1" value="2020">
       </label>
-      <button type="button" id="toggle-income" title="Activate/deactivate all income sources">Toggle income</button>
-      <button type="button" id="toggle-expenses" title="Activate/deactivate all expenses">Toggle expenses</button>
     </div>
   </header>
 
@@ -481,10 +573,18 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     </div>
     <div id="lanes">
       <div id="sources-bar" class="bar">
-        <span class="bar-label">Income sources &mdash; click to add, drag head/tail to resize</span>
+        <div class="bar-head">
+          <button type="button" class="add-node">Add Income Node</button>
+          <button type="button" id="toggle-income" title="Activate/deactivate all income sources">Toggle income</button>
+          <span class="bar-label">Income sources &mdash; click to add, drag head/tail to resize</span>
+        </div>
       </div>
       <div id="expenses-bar" class="bar">
-        <span class="bar-label">Expense sources &mdash; click to add, drag head/tail to resize</span>
+        <div class="bar-head">
+          <button type="button" class="add-node">Add Expense Node</button>
+          <button type="button" id="toggle-expenses" title="Activate/deactivate all expenses">Toggle expenses</button>
+          <span class="bar-label">Expense sources &mdash; click to add, drag head/tail to resize</span>
+        </div>
       </div>
     </div>
     <div id="cursor-line"></div>
@@ -512,9 +612,26 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     <button type="button" id="ctx-convert"></button>
   </div>
 
+  <dialog id="source-dialog" aria-label="New source"></dialog>
+
+  <dialog id="save-info" aria-labelledby="save-info-title">
+    <form method="dialog">
+      <h2 id="save-info-title">Saved in this browser only</h2>
+      <p>Your changes are saved automatically to this browser's storage, so they'll be here the next time you open the app in this browser.</p>
+      <p>That copy is not a backup. It is lost or out of reach if you:</p>
+      <ul>
+        <li>clear your browsing or site data,</li>
+        <li>use another browser, device, or a private window, or</li>
+        <li>open the app from a different web address.</li>
+      </ul>
+      <p>To keep your work safe, click the project name and choose <strong>Export</strong>. That downloads a <code>.json</code> file you can restore any time with <strong>Import</strong>.</p>
+      <div class="prop-actions"><button>Got it</button></div>
+    </form>
+  </dialog>
+
   <div id="drawer-backdrop"></div>
   <aside id="project-drawer" aria-label="Projects">
-    <span class="version">v1.0</span>
+    <span class="version">v1.1</span>
     <div class="drawer-head">
       <h2>Projects</h2>
       <button type="button" id="drawer-close" title="Close">&times;</button>
@@ -553,7 +670,7 @@ const MIN_SPAN = 12;
 const HEAD_W = 120;
 const TAIL_W = 120;
 const LANE_H = 92;
-const LANES_TOP = 26;
+const LANES_TOP = 34; // section header bottom (24px) + 10px gap
 const BAR_H = 200;
 const COLORS = ['#5fd38d'];
 const EXPENSE_COLORS = ['#e05252'];
@@ -600,12 +717,16 @@ const contextMenu = $('context-menu');
 const ctxConvert = $('ctx-convert');
 const projectName = $('project-name');
 const projectList = $('project-list');
+const saveNote = $('save-note');
+const saveInfo = $('save-info');
 
 const KINDS = {
   income: { bar: sourcesBar, label: 'Income', colors: COLORS },
   expense: { bar: expensesBar, label: 'Expense', colors: EXPENSE_COLORS },
 };
 const colorFor = (kind, id) => KINDS[kind].colors[(id - 1) % KINDS[kind].colors.length];
+// Golden-angle hue steps never repeat, so every pie slice gets its own color.
+const pieColor = (i) => `hsl(${(145 + i * 137.508) % 360}, 65%, 58%)`;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const rangeStart = () => (state.startYear - BASE_YEAR) * 12;
@@ -619,6 +740,7 @@ const xToMonth = (x) => state.viewStart + (x / barWidth()) * span();
 const localX = (e, el) => e.clientX - el.getBoundingClientRect().left;
 const monthLabel = (m) => `${MONTHS[m % 12]} ${BASE_YEAR + Math.floor(m / 12)}`;
 const money = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const withCommas = (n) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
 const taxFactor = () => 1 - state.taxRate / 100;
 // Expenses step up once per calendar year after the inflation starting year.
 const inflationFactor = (m) => Math.pow(
@@ -721,12 +843,29 @@ function removeStored(key) {
   }
 }
 
+// Projects whose data changed this session and haven't been exported since.
+const unexported = new Set();
+let savedSnapshot = null;
+// Zoom/pan is saved too, but isn't worth an export reminder.
+const dataSnapshot = () => JSON.stringify({ ...state, viewStart: 0, viewEnd: 0 });
+
+function renderSaveNote() {
+  saveNote.hidden = !unexported.has(projects.activeId);
+}
+
 function saveState() {
-  writeJSON(projectKey(projects.activeId), state);
+  if (!writeJSON(projectKey(projects.activeId), state)) return;
+  const snapshot = dataSnapshot();
+  if (savedSnapshot !== null && snapshot !== savedSnapshot) {
+    unexported.add(projects.activeId);
+    renderSaveNote();
+  }
+  savedSnapshot = snapshot;
 }
 
 // Replaces the current timeline with the given saved one (by default the active project's).
 function loadState(saved = readJSON(projectKey(projects.activeId))) {
+  savedSnapshot = null;
   for (const el of sourceEls.values()) el.root.remove();
   sourceEls.clear();
   laneOf.clear();
@@ -848,6 +987,8 @@ function exportProject() {
   link.download = `${name.replace(/[\\/:*?"<>|]/g, '_')}.json`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url));
+  unexported.delete(projects.activeId);
+  renderSaveNote();
 }
 
 // Imports always add a new project so nothing existing is overwritten.
@@ -932,6 +1073,7 @@ const projectSelectButton = (p) => drawerButton('project-select', p.name, p.name
 
 function renderProjects() {
   projectName.textContent = currentProject().name;
+  renderSaveNote();
   projectList.replaceChildren(...projects.list.map((p) => {
     const li = document.createElement('li');
     li.className = p.id === projects.activeId ? 'project current' : 'project';
@@ -1124,7 +1266,7 @@ function addSource(kind, month) {
     monthly: 1000,
     start,
     end: start + 1,
-    active: false,
+    active: true,
     color: colorFor(kind, id),
     investment: false,
     initial: DEFAULT_INITIAL,
@@ -1134,6 +1276,7 @@ function addSource(kind, month) {
   state.sources.push(s);
   sourceEls.set(id, createSourceEl(s));
   render();
+  openSourceDialog(s);
 }
 
 function removeSource(id) {
@@ -1144,10 +1287,14 @@ function removeSource(id) {
   render();
 }
 
-function toggleInvestment(s) {
-  s.investment = !s.investment;
+function rebuildSourceEl(s) {
   sourceEls.get(s.id).root.remove();
   sourceEls.set(s.id, createSourceEl(s));
+}
+
+function toggleInvestment(s) {
+  s.investment = !s.investment;
+  rebuildSourceEl(s);
   render();
 }
 
@@ -1157,10 +1304,10 @@ function createSourceEl(s) {
   root.dataset.id = s.id;
   root.style.setProperty('--color', s.color);
   const amountRows = s.investment
-    ? `<div class="row">$<input type="number" class="initial" min="0" step="1000" title="Initial amount"></div>
+    ? `<div class="row">$<input type="text" inputmode="numeric" class="initial" title="Initial amount"></div>
        <div class="row"><input type="number" class="pct" min="0" max="100" step="0.5" title="Yearly withdrawal % of current balance">% draw/yr</div>
        <div class="row"><input type="number" class="growth" min="-100" max="100" step="0.5" title="Yearly growth %">% growth/yr</div>`
-    : '<div class="row">$<input type="number" class="amount" min="0" step="50">/mo</div>';
+    : '<div class="row">$<input type="text" inputmode="numeric" class="amount">/mo</div>';
   root.innerHTML = `
     <div class="head">
       <div class="row">
@@ -1200,17 +1347,17 @@ function createSourceEl(s) {
       saveState();
     }
   });
-  q('.delete').addEventListener('click', () => removeSource(s.id));
+  q('.delete').addEventListener('click', () => {
+    if (confirm(`Delete "${s.name || '(unnamed)'}"? This cannot be undone.`)) removeSource(s.id);
+  });
   if (s.investment) {
-    q('.initial').value = s.initial;
+    bindMoneyInput(q('.initial'), 1000, () => s.initial, (v) => { s.initial = v; });
     q('.pct').value = s.withdrawPct;
     q('.growth').value = s.growthPct;
-    q('.initial').addEventListener('input', (e) => { s.initial = Math.max(0, Number(e.target.value) || 0); render(); });
     q('.pct').addEventListener('input', (e) => { s.withdrawPct = clamp(Number(e.target.value) || 0, 0, 100); render(); });
     q('.growth').addEventListener('input', (e) => { s.growthPct = clamp(Number(e.target.value) || 0, -100, 100); render(); });
   } else {
-    q('.amount').value = s.monthly;
-    q('.amount').addEventListener('input', (e) => { s.monthly = Math.max(0, Number(e.target.value) || 0); render(); });
+    bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
   }
   if (s.kind === 'income') root.addEventListener('contextmenu', (e) => openContextMenu(e, s));
 
@@ -1228,6 +1375,32 @@ function createSourceEl(s) {
   enableEdgeDrag(refs.tail, s, 'end');
   KINDS[s.kind].bar.appendChild(root);
   return refs;
+}
+
+// Whole-dollar text input shown with thousands separators; arrow keys step like a number input.
+function bindMoneyInput(input, step, get, set) {
+  input.value = withCommas(get());
+  input.addEventListener('input', () => {
+    const raw = input.value;
+    const digitsBeforeCaret = raw.slice(0, input.selectionStart).replace(/\D/g, '').length;
+    const digits = raw.replace(/\D/g, '');
+    set(Number(digits) || 0);
+    input.value = digits ? withCommas(get()) : '';
+    let pos = 0;
+    for (let seen = 0; pos < input.value.length && seen < digitsBeforeCaret; pos++) {
+      if (/\d/.test(input.value[pos])) seen++;
+    }
+    input.setSelectionRange(pos, pos);
+    render();
+  });
+  input.addEventListener('blur', () => { input.value = withCommas(get()); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    set(Math.max(0, get() + (e.key === 'ArrowUp' ? step : -step)));
+    input.value = withCommas(get());
+    render();
+  });
 }
 
 function enableEdgeDrag(handle, s, edge) {
@@ -1323,6 +1496,77 @@ function closeContextMenu() {
   menuSource = null;
 }
 
+// ---------- New source dialog ----------
+
+const sourceDialog = $('source-dialog');
+const monthValue = (m) => `${BASE_YEAR + Math.floor(m / 12)}-${String((m % 12) + 1).padStart(2, '0')}`;
+
+function parseMonthValue(value) {
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+  return match ? (Number(match[1]) - BASE_YEAR) * 12 + Number(match[2]) - 1 : null;
+}
+
+// Edits apply live; Cancel discards the new source, Done checks its name for activation.
+function openSourceDialog(s) {
+  sourceDialog.className = s.kind;
+  sourceDialog.style.setProperty('--color', s.color);
+  sourceDialog.innerHTML = `
+    <form method="dialog">
+      <h2>New ${KINDS[s.kind].label.toLowerCase()}</h2>
+      <label class="prop">Name <input type="text" class="name" maxlength="40"></label>
+      <p class="hint">Names starting with "Income" or "Expense" are left inactive.</p>
+      <label class="prop">Monthly amount <span>$<input type="text" inputmode="numeric" class="amount"></span></label>
+      <label class="prop">Start <input type="month" class="start"></label>
+      <label class="prop">End <input type="month" class="end"></label>
+      <div class="prop-actions">
+        <button type="submit">Done</button>
+        <button type="button" class="cancel">Cancel</button>
+      </div>
+    </form>`;
+
+  const q = (sel) => sourceDialog.querySelector(sel);
+  const nameInput = q('.name');
+  const startInput = q('.start');
+  const endInput = q('.end');
+  q('.cancel').addEventListener('click', () => sourceDialog.close('cancel'));
+  nameInput.value = s.name;
+  nameInput.addEventListener('input', () => { s.name = nameInput.value; saveState(); });
+  bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+
+  const showDates = () => {
+    startInput.value = monthValue(s.start);
+    endInput.value = monthValue(s.end - 1);
+  };
+  const applyDates = () => {
+    const start = parseMonthValue(startInput.value);
+    const last = parseMonthValue(endInput.value);
+    if (start !== null) s.start = clamp(start, rangeStart(), rangeEnd() - 1);
+    s.end = clamp(last === null ? s.end : last + 1, s.start + 1, rangeEnd());
+    showDates();
+    render();
+  };
+  for (const input of [startInput, endInput]) {
+    input.min = monthValue(rangeStart());
+    input.max = monthValue(rangeEnd() - 1);
+    input.addEventListener('change', applyDates);
+  }
+  showDates();
+
+  sourceDialog.addEventListener('close', () => {
+    if (sourceDialog.returnValue === 'cancel') {
+      removeSource(s.id);
+      return;
+    }
+    if (!canActivate(s)) s.active = false;
+    rebuildSourceEl(s);
+    render();
+  }, { once: true });
+  dragLabel.hidden = true;
+  sourceDialog.returnValue = '';
+  sourceDialog.showModal();
+  nameInput.select();
+}
+
 // ---------- Hover tooltip ----------
 
 function renderPie(slices, total) {
@@ -1386,7 +1630,7 @@ function showTooltip(e) {
   const m = clamp(Math.floor(xToMonth(localX(e, summaryBar))), rangeStart(), rangeEnd() - 1);
   const slices = state.sources
     .filter((s) => s.kind === 'income' && s.active)
-    .map((s) => ({ name: s.name, color: s.color, value: amountAt(s, m) }))
+    .map((s, i) => ({ name: s.name, color: pieColor(i), value: amountAt(s, m) }))
     .filter((slice) => slice.value > 0);
   const total = slices.reduce((sum, slice) => sum + slice.value, 0);
   const expenses = monthlyTotal(m, 'expense');
@@ -1485,8 +1729,11 @@ for (const [kind, { bar }] of Object.entries(KINDS)) {
     wasEditing = Boolean(document.activeElement?.matches('.source input:not([type="checkbox"])'));
   });
   bar.addEventListener('click', (e) => {
-    if (wasEditing || e.target.closest('.source')) return;
+    if (wasEditing || e.target.closest('.source, .bar-head button')) return;
     addSource(kind, Math.floor(xToMonth(localX(e, bar))));
+  });
+  bar.querySelector('.add-node').addEventListener('click', () => {
+    addSource(kind, Math.floor((state.viewStart + state.viewEnd) / 2));
   });
 }
 
@@ -1565,6 +1812,7 @@ document.addEventListener('pointerdown', (e) => {
   if (!e.target.matches('.active')) notice.hidden = true;
 });
 projectName.addEventListener('click', () => setDrawer(true));
+saveNote.addEventListener('click', () => saveInfo.showModal());
 $('drawer-backdrop').addEventListener('click', () => setDrawer(false));
 $('drawer-close').addEventListener('click', () => setDrawer(false));
 $('project-new').addEventListener('click', () => {
@@ -1583,9 +1831,13 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeContextMenu();
     setDrawer(false);
+    if (sourceDialog.open) sourceDialog.close('cancel');
+    if (saveInfo.open) saveInfo.close();
   }
-  // Values are already applied on input, so Enter only needs to drop focus.
-  if (e.key === 'Enter' && e.target.matches('input:not([type="checkbox"])')) e.target.blur();
+  // Values are already applied on input, so Enter only needs to drop focus (dialogs submit instead).
+  if (e.key === 'Enter' && e.target.matches('input:not([type="checkbox"])') && !e.target.closest('dialog')) {
+    e.target.blur();
+  }
 });
 window.addEventListener('resize', render);
 
