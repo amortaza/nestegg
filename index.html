@@ -55,7 +55,7 @@ header {
 }
 #save-note:hover { text-decoration: underline dotted; }
 
-#save-info {
+#save-info, #tax-info, #investment-info {
   width: 400px;
   padding: 16px;
   background: #171e2e;
@@ -67,16 +67,28 @@ header {
   font-size: 13px;
   line-height: 1.5;
 }
-#save-info::backdrop { background: rgba(0, 0, 0, 0.45); }
-#save-info h2 {
+#save-info::backdrop, #tax-info::backdrop, #investment-info::backdrop { background: rgba(0, 0, 0, 0.45); }
+#save-info h2, #tax-info h2, #investment-info h2 {
   margin: 0 0 8px;
   font-size: 13px;
   color: #f5c542;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-#save-info p, #save-info ul { margin: 0 0 8px; }
-#save-info ul { padding-left: 20px; }
+#save-info p, #save-info ul, #tax-info p, #tax-info ul, #investment-info p, #investment-info ul { margin: 0 0 8px; }
+#save-info ul, #tax-info ul, #investment-info ul { padding-left: 20px; }
+#investment-info .note { font-size: 11px; color: #8a93a6; }
+
+.info-btn {
+  padding: 0;
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.info-btn:hover { color: var(--color); }
 
 .controls { display: flex; gap: 6px; align-items: center; }
 
@@ -176,14 +188,16 @@ header {
   pointer-events: auto;
 }
 .bar-head button:hover { background: #2d3852; }
+#investments-bar .bar-head { --color: #a87ef5; }
 #sources-bar .bar-head { --color: #5fd38d; }
 #expenses-bar .bar-head { --color: #e05252; }
 
 #summary-bar { cursor: crosshair; }
 #timeline-bar { cursor: grab; height: 100px; }
-#timeline-bar.panning { cursor: grabbing; }
-#sources-bar { cursor: copy; background: #0f2c1e; }
-#expenses-bar { cursor: copy; background: #331010; }
+#investments-bar { cursor: grab; background: #22133a; }
+#sources-bar { cursor: grab; background: #0f2c1e; }
+#expenses-bar { cursor: grab; background: #331010; }
+#timeline-bar.panning, #investments-bar.panning, #sources-bar.panning, #expenses-bar.panning { cursor: grabbing; }
 
 #cursor-line {
   position: absolute;
@@ -199,7 +213,10 @@ header {
 /* Income sources */
 .source {
   position: absolute;
-  height: 88px;
+  height: 110px;
+  border-radius: 4px;
+  /* Tints the node's footprint so the untinted panel reads as the drag-to-pan area. */
+  background: color-mix(in srgb, var(--color) 10%, transparent);
   cursor: default;
 }
 .source::before {
@@ -207,11 +224,9 @@ header {
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
-  height: 4px;
-  margin-top: -2px;
-  background: var(--color);
-  opacity: 0.6;
+  top: 37.5%;
+  height: 25%;
+  background: color-mix(in srgb, var(--color) 35%, #232c40);
 }
 .source.inactive { opacity: 0.4; }
 
@@ -228,21 +243,34 @@ header {
   border: 1px solid var(--color);
   border-radius: 4px;
   font-size: 12px;
+  white-space: nowrap;
   cursor: ew-resize;
 }
 .head {
-  width: 120px;
+  width: max-content;
   border-right-width: 4px;
   border-left-color: color-mix(in srgb, var(--color) 45%, black);
   gap: 1px;
 }
 .tail {
-  width: 120px;
+  width: max-content;
   border-left-width: 4px;
   border-right-color: color-mix(in srgb, var(--color) 45%, black);
 }
 
 .row { display: flex; align-items: center; gap: 4px; }
+.row .date { flex: none; }
+
+.resize-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+}
+.head .resize-grip { left: 0; }
+.tail .resize-grip { right: 0; }
+.resize-grip:hover { background: color-mix(in srgb, var(--color) 40%, transparent); }
 
 .head input {
   background: transparent;
@@ -252,15 +280,30 @@ header {
   padding: 0;
 }
 .head input.name { flex: 1; min-width: 0; font-weight: 600; }
-.head input.amount {
+.head input.amount, .head input.contribution {
   width: 64px;
   border-bottom: 1px dashed #556079;
 }
 .head input.initial { width: 80px; border-bottom: 1px dashed #556079; }
-.head input.pct, .head input.growth { width: 30px; border-bottom: 1px dashed #556079; }
-.head input.pct, .head input.growth { -moz-appearance: textfield; appearance: textfield; }
-.head input.pct::-webkit-inner-spin-button,
-.head input.growth::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.head input.pct, .head input.growth, .head input.income-growth, .head input.tax-pct, .head input.match-pct { width: 30px; border-bottom: 1px dashed #556079; }
+.head input.growth, .head input.income-growth, .head input.tax-pct, .head input.match-pct { width: 48px; }
+.head input.pct { -moz-appearance: textfield; appearance: textfield; }
+.head .tax-row { color: #f2a0a0; }
+.head .growth-row { color: #9adbb4; }
+
+.money-step { display: inline-flex; flex-direction: column; vertical-align: middle; }
+.money-step button {
+  padding: 0 2px;
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font-size: 7px;
+  line-height: 8px;
+  cursor: pointer;
+}
+.money-step button:hover { color: var(--color); }
+#source-dialog .money-step button { font-size: 9px; line-height: 11px; }
+.head input.pct::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .source.investment .head, .source.investment .tail { border-style: dashed; }
 .head input:focus { outline: 1px solid var(--color); }
 .head input[type="checkbox"] { accent-color: var(--color); cursor: pointer; }
@@ -278,6 +321,7 @@ header {
 
 .date { color: #8a93a6; font-size: 11px; }
 .total { font-weight: 600; }
+#sources-bar .total { color: #7ddc9f; }
 .remaining { font-size: 11px; }
 
 /* Hover tooltip */
@@ -317,6 +361,7 @@ header {
   border-radius: 6px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
+#source-dialog.investment { background: #22133a; }
 #source-dialog.income { background: #0f2c1e; }
 #source-dialog.expense { background: #331010; }
 #source-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
@@ -329,10 +374,59 @@ header {
   letter-spacing: 0.05em;
 }
 #source-dialog .prop input { width: 160px; }
-#source-dialog .prop input.amount { width: 148px; margin-left: 4px; }
+#source-dialog .prop input.amount, #source-dialog .prop input.initial, #source-dialog .prop input.contribution { width: 134px; margin-left: 4px; }
+#source-dialog .prop input.pct, #source-dialog .prop input.growth, #source-dialog .prop input.income-growth, #source-dialog .prop input.tax-pct, #source-dialog .prop input.match-pct { width: 148px; margin-right: 4px; }
+#source-dialog .prop input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--color); cursor: pointer; }
+#source-dialog [hidden] { display: none; }
 #source-dialog .prop input:focus { outline: 1px solid var(--color); }
 #source-dialog .hint { margin: -4px 0 0; font-size: 11px; color: #8a93a6; }
 #source-dialog .prop-actions button[type="submit"] { border-color: var(--color); }
+
+#confirm-dialog {
+  width: 320px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--color) 12%, #171e2e);
+  color: #e6e9ef;
+  border: 1px solid var(--color);
+  border-top-width: 4px;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+}
+#confirm-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+#confirm-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#confirm-dialog p { margin: 0 0 12px; line-height: 1.5; }
+#confirm-dialog .danger { border-color: #e05252; color: #f2a0a0; }
+#confirm-dialog .danger:hover { background: #3a1a1a; }
+#source-dialog .type-option { display: flex; align-items: center; gap: 8px; }
+#source-dialog .pick-type {
+  flex: 1;
+  padding: 8px 12px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+#source-dialog .pick-type:hover { background: #2d3852; border-color: var(--color); }
+#source-dialog .type-option .info-btn { font-size: 16px; }
+.inv-type {
+  flex: none;
+  padding: 0 4px;
+  border: 1px solid var(--color);
+  border-radius: 3px;
+  color: var(--color);
+  font-size: 10px;
+}
 
 /* Project drawer */
 #drawer-backdrop {
@@ -526,12 +620,17 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 }
 #tooltip-date { color: #8a93a6; }
 #tooltip-age { font-weight: 600; margin-top: 2px; }
+.no-birth, #tooltip-age.no-birth { color: #f07c7c; }
 #tooltip-net { font-size: 16px; font-weight: 600; margin: 2px 0 4px; }
 #tooltip-net.negative { color: #f07c7c; }
 #tooltip-piggy { color: #f5c542; font-weight: 600; margin-bottom: 4px; }
-#tooltip-total { color: #4e9af1; }
+#tooltip-total { color: #5fd38d; }
 #tooltip-expenses { color: #f07c7c; }
 #tooltip-inflation { color: #8a93a6; margin-bottom: 8px; }
+#tooltip-year { margin-bottom: 8px; padding-top: 6px; border-top: 1px solid #3a4560; }
+#tooltip-year-title { color: #8a93a6; margin-bottom: 2px; }
+.tooltip-year-row { display: flex; justify-content: space-between; gap: 12px; }
+#tooltip-year-taxes { color: #f07c7c; }
 
 .tooltip-body { display: flex; gap: 12px; align-items: center; }
 
@@ -548,14 +647,11 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       <button type="button" id="save-note" title="Why export?" hidden>Saved to this browser &mdash; export to keep it safe &#9432;</button>
     </div>
     <div class="controls">
-      <label class="birth">Investment withdrawal tax rate
-        <input type="number" id="tax-rate" class="tax" min="0" max="100" step="1" value="0">%
-      </label>
       <label class="birth">Inflation
         <input type="number" id="inflation-rate" class="tax" min="0" max="100" step="0.1" value="0">%
       </label>
       <label class="birth">Inflation starting year
-        <input type="number" id="inflation-year" min="2020" max="2080" step="1" value="2020">
+        <input type="number" id="inflation-year" min="2000" max="2100" step="1" value="2000">
       </label>
     </div>
   </header>
@@ -563,7 +659,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
   <main id="bars">
     <div id="pinned">
       <div id="summary-bar" class="bar">
-        <span class="bar-label">Monthly income &amp; expenses &mdash; hover for breakdown</span>
+        <span class="bar-label">Monthly income &amp; expenses &mdash; hover for breakdown, drag to select a range for the next node</span>
         <canvas id="summary-canvas"></canvas>
       </div>
       <div id="timeline-bar" class="bar">
@@ -572,18 +668,24 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       </div>
     </div>
     <div id="lanes">
+      <div id="investments-bar" class="bar">
+        <div class="bar-head">
+          <button type="button" class="add-node">Add Investment Node</button>
+          <span class="bar-label">Investments &mdash; drag to pan, drag head/tail to resize</span>
+        </div>
+      </div>
       <div id="sources-bar" class="bar">
         <div class="bar-head">
           <button type="button" class="add-node">Add Income Node</button>
           <button type="button" id="toggle-income" title="Activate/deactivate all income sources">Toggle income</button>
-          <span class="bar-label">Income sources &mdash; click to add, drag head/tail to resize</span>
+          <span class="bar-label">Income sources &mdash; drag to pan, drag head/tail to resize</span>
         </div>
       </div>
       <div id="expenses-bar" class="bar">
         <div class="bar-head">
           <button type="button" class="add-node">Add Expense Node</button>
           <button type="button" id="toggle-expenses" title="Activate/deactivate all expenses">Toggle expenses</button>
-          <span class="bar-label">Expense sources &mdash; click to add, drag head/tail to resize</span>
+          <span class="bar-label">Expense sources &mdash; drag to pan, drag head/tail to resize</span>
         </div>
       </div>
     </div>
@@ -598,6 +700,11 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     <div id="tooltip-total"></div>
     <div id="tooltip-expenses"></div>
     <div id="tooltip-inflation"></div>
+    <div id="tooltip-year">
+      <div id="tooltip-year-title"></div>
+      <div class="tooltip-year-row"><span>Total income</span><span id="tooltip-year-income"></span></div>
+      <div class="tooltip-year-row"><span>Taxes</span><span id="tooltip-year-taxes"></span></div>
+    </div>
     <div class="tooltip-body">
       <svg id="tooltip-pie" viewBox="0 0 100 100" width="100" height="100"></svg>
       <ul id="tooltip-legend"></ul>
@@ -614,6 +721,17 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
   <dialog id="source-dialog" aria-label="New source"></dialog>
 
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+    <form method="dialog">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-message"></p>
+      <div class="prop-actions">
+        <button value="delete" class="danger">Delete</button>
+        <button value="cancel" autofocus>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="save-info" aria-labelledby="save-info-title">
     <form method="dialog">
       <h2 id="save-info-title">Saved in this browser only</h2>
@@ -629,9 +747,72 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     </form>
   </dialog>
 
+  <dialog id="tax-info" aria-labelledby="tax-info-title">
+    <form method="dialog">
+      <h2 id="tax-info-title">How tax is calculated</h2>
+      <p>Each income source is taxed at its own flat rate. Every month, its gross amount is reduced by that percentage:</p>
+      <p><code>after-tax = gross &times; (1 &minus; tax rate)</code></p>
+      <ul>
+        <li><strong>Regular income:</strong> the gross is the monthly amount including its yearly growth, so the tax grows with it.</li>
+        <li><strong>Investments:</strong> only the monthly withdrawal is taxed. Growth inside the balance and the remaining balance are not taxed.</li>
+        <li><strong>Expenses</strong> are never taxed.</li>
+      </ul>
+      <p>There are no brackets, deductions, or combining of sources. To approximate a progressive tax, enter your effective (average) rate.</p>
+      <p>The chart, net, piggy bank, and each source's total use after-tax amounts. Hover the summary chart to see the year's total taxes.</p>
+      <div class="prop-actions"><button>Got it</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="investment-info" aria-label="About this account type">
+    <form method="dialog">
+      <section data-type="stock">
+        <h2>Stock (brokerage account)</h2>
+        <p>A regular, taxable investment account with no special tax treatment.</p>
+        <ul>
+          <li><strong>Contributions:</strong> any amount, any time, from money you've already paid tax on.</li>
+          <li><strong>Withdrawals:</strong> any time, with no penalties.</li>
+          <li><strong>Taxes:</strong> dividends are taxed each year, and selling at a gain is taxed. Holdings kept over a year get long-term capital gains rates (0%, 15% or 20% federal, depending on income); shorter holdings are taxed as ordinary income.</li>
+        </ul>
+        <p><strong>Here:</strong> the capital gains tax applies only to growth above what you put in, giving the after-tax value at the end date.</p>
+      </section>
+      <section data-type="401k">
+        <h2>401(k)</h2>
+        <p>An employer-sponsored retirement plan funded from your paycheck.</p>
+        <ul>
+          <li><strong>Contributions:</strong> usually pre-tax, lowering your taxable income now. Many employers match part of what you put in. IRS annual limits apply, with extra catch-up room from age 50.</li>
+          <li><strong>Withdrawals:</strong> taxed as ordinary income. Before age 59&frac12; there is generally a 10% penalty, with some exceptions (such as leaving your job in or after the year you turn 55).</li>
+          <li><strong>Required minimum distributions</strong> generally start at age 73 (75 if born in 1960 or later).</li>
+        </ul>
+        <p><strong>Here:</strong> the employer match adds that percentage of your monthly contribution, and the withdrawal tax gives the after-tax value at the end date. For a Roth 401(k), set the tax to 0%.</p>
+      </section>
+      <section data-type="roth">
+        <h2>Roth IRA</h2>
+        <p>An individual retirement account funded with money you've already paid tax on.</p>
+        <ul>
+          <li><strong>Contributions:</strong> limited each year by the IRS, and eligibility phases out at higher incomes. Your contributions (not earnings) can be taken out any time without tax or penalty.</li>
+          <li><strong>Withdrawals:</strong> earnings come out tax- and penalty-free once you're 59&frac12; and the account has been open at least 5 years.</li>
+          <li><strong>No required minimum distributions</strong> during your lifetime.</li>
+        </ul>
+        <p><strong>Here:</strong> there's no tax setting; the whole ending balance is yours.</p>
+      </section>
+      <section data-type="traditional">
+        <h2>Traditional IRA</h2>
+        <p>An individual retirement account where contributions may be tax-deductible.</p>
+        <ul>
+          <li><strong>Contributions:</strong> limited each year by the IRS (one limit shared with any Roth IRA). The deduction phases out at higher incomes if you or your spouse have a workplace plan.</li>
+          <li><strong>Withdrawals:</strong> taxed as ordinary income. Before age 59&frac12; there is generally a 10% penalty, with some exceptions.</li>
+          <li><strong>Required minimum distributions</strong> generally start at age 73 (75 if born in 1960 or later).</li>
+        </ul>
+        <p><strong>Here:</strong> the withdrawal tax gives the after-tax value at the end date.</p>
+      </section>
+      <p class="note">General information, not tax advice. IRS rules and limits change every year.</p>
+      <div class="prop-actions"><button>Got it</button></div>
+    </form>
+  </dialog>
+
   <div id="drawer-backdrop"></div>
   <aside id="project-drawer" aria-label="Projects">
-    <span class="version">v1.1</span>
+    <span class="version">v1.3</span>
     <div class="drawer-head">
       <h2>Projects</h2>
       <button type="button" id="drawer-close" title="Close">&times;</button>
@@ -645,9 +826,9 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       </label>
       <div class="prop">Year range
         <span>
-          <input type="number" id="start-year" min="2020" max="2079" step="1" aria-label="Start year">
+          <input type="number" id="start-year" min="2000" max="2095" step="5" aria-label="Start year">
           &ndash;
-          <input type="number" id="end-year" min="2021" max="2080" step="1" aria-label="End year">
+          <input type="number" id="end-year" min="2005" max="2100" step="5" aria-label="End year">
         </span>
       </div>
       <div class="prop-actions">
@@ -663,17 +844,21 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 'use strict';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const BASE_YEAR = 2020;
-const END_YEAR = 2080;
-const MAX_MONTH = (END_YEAR - BASE_YEAR) * 12; // months are counted from Jan 2020
+const BASE_YEAR = 2000;
+const END_YEAR = 2100;
+const MAX_MONTH = (END_YEAR - BASE_YEAR) * 12; // months are counted from Jan 2000
+// Saves from before `baseYear` was recorded counted months from Jan 2020.
+const LEGACY_BASE_YEAR = 2020;
 const MIN_SPAN = 12;
-const HEAD_W = 120;
+const HEAD_W = 140;
 const TAIL_W = 120;
-const LANE_H = 92;
+const MAX_NODE_W = 400;
+const LANE_H = 130; // 110px node + 20px gap
 const LANES_TOP = 34; // section header bottom (24px) + 10px gap
 const BAR_H = 200;
 const COLORS = ['#5fd38d'];
 const EXPENSE_COLORS = ['#e05252'];
+const INVESTMENT_COLORS = ['#a87ef5'];
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const STORAGE_KEY = 'income-timeline-state';
 const PROJECTS_KEY = 'income-timeline-projects';
@@ -683,7 +868,8 @@ const DEFAULT_WITHDRAW_PCT = 4;
 const DEFAULT_GROWTH_PCT = 5;
 
 const defaultState = () => ({
-  viewStart: 0, viewEnd: MAX_MONTH, sources: [], nextId: 1, birthYear: null, taxRate: 0,
+  baseYear: BASE_YEAR,
+  viewStart: 0, viewEnd: MAX_MONTH, sources: [], nextId: 1, birthYear: null,
   inflationRate: 0, inflationYear: BASE_YEAR, startYear: BASE_YEAR, endYear: END_YEAR,
 });
 const state = defaultState();
@@ -700,6 +886,7 @@ const timelineBar = $('timeline-bar');
 const timelineCanvas = $('timeline-canvas');
 const sourcesBar = $('sources-bar');
 const expensesBar = $('expenses-bar');
+const investmentsBar = $('investments-bar');
 const cursorLine = $('cursor-line');
 const tooltip = $('tooltip');
 const tooltipDate = $('tooltip-date');
@@ -709,6 +896,9 @@ const notice = $('notice');
 const tooltipTotal = $('tooltip-total');
 const tooltipExpenses = $('tooltip-expenses');
 const tooltipInflation = $('tooltip-inflation');
+const tooltipYearTitle = $('tooltip-year-title');
+const tooltipYearIncome = $('tooltip-year-income');
+const tooltipYearTaxes = $('tooltip-year-taxes');
 const tooltipNet = $('tooltip-net');
 const tooltipPiggy = $('tooltip-piggy');
 const tooltipPie = $('tooltip-pie');
@@ -719,12 +909,24 @@ const projectName = $('project-name');
 const projectList = $('project-list');
 const saveNote = $('save-note');
 const saveInfo = $('save-info');
+const taxInfo = $('tax-info');
+const investmentInfo = $('investment-info');
+const confirmDialog = $('confirm-dialog');
 
+// Investment-pane nodes only track a balance; the summary chart counts just income and expense.
 const KINDS = {
+  investment: { bar: investmentsBar, label: 'Investment', colors: INVESTMENT_COLORS },
   income: { bar: sourcesBar, label: 'Income', colors: COLORS },
   expense: { bar: expensesBar, label: 'Expense', colors: EXPENSE_COLORS },
 };
 const colorFor = (kind, id) => KINDS[kind].colors[(id - 1) % KINDS[kind].colors.length];
+// `taxLabel` names the tax applied when the money comes out; Roth withdrawals are tax-free, so it has none.
+const INVESTMENT_TYPES = {
+  stock: { label: 'Stock', taxLabel: 'Capital gains tax' },
+  '401k': { label: '401(k)', taxLabel: 'Tax on withdrawal', match: true },
+  roth: { label: 'Roth IRA', taxLabel: null },
+  traditional: { label: 'Traditional IRA', taxLabel: 'Tax on withdrawal' },
+};
 // Golden-angle hue steps never repeat, so every pie slice gets its own color.
 const pieColor = (i) => `hsl(${(145 + i * 137.508) % 360}, 65%, 58%)`;
 
@@ -741,7 +943,6 @@ const localX = (e, el) => e.clientX - el.getBoundingClientRect().left;
 const monthLabel = (m) => `${MONTHS[m % 12]} ${BASE_YEAR + Math.floor(m / 12)}`;
 const money = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const withCommas = (n) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
-const taxFactor = () => 1 - state.taxRate / 100;
 // Expenses step up once per calendar year after the inflation starting year.
 const inflationFactor = (m) => Math.pow(
   1 + state.inflationRate / 100,
@@ -751,37 +952,60 @@ const inflationFactor = (m) => Math.pow(
 const canActivate = (s) => !/^(Expense|Income)/.test(s.name);
 
 // Each month the pot pays out (yearly % / 12) of its current balance, then the rest compounds at the yearly growth rate.
+// Investment-pane nodes never pay out.
 function investmentRates(s) {
-  const withdraw = s.withdrawPct / 100 / 12;
+  const withdraw = s.kind === 'investment' ? 0 : s.withdrawPct / 100 / 12;
   const growth = Math.pow(1 + s.growthPct / 100, 1 / 12) - 1;
   return { withdraw, ratio: (1 - withdraw) * (1 + growth) };
 }
 
-function amountAt(s, m) {
+function grossAt(s, m) {
   if (m < s.start || m >= s.end) return 0;
   if (s.kind === 'expense') return s.monthly * inflationFactor(m);
-  if (!s.investment) return s.monthly;
+  // Regular income steps up once a year, on each anniversary of its start month.
+  if (!s.investment) return s.monthly * Math.pow(1 + s.incomeGrowthPct / 100, Math.floor((m - s.start) / 12));
   const { withdraw, ratio } = investmentRates(s);
-  return s.initial * Math.pow(ratio, m - s.start) * withdraw * taxFactor();
+  return s.initial * Math.pow(ratio, m - s.start) * withdraw;
 }
 
-const remainingBalance = (s) => s.initial * Math.pow(investmentRates(s).ratio, s.end - s.start);
+const taxPctOf = (s) => (s.kind === 'expense' ? 0 : s.taxPct);
+const amountAt = (s, m) => grossAt(s, m) * (1 - taxPctOf(s) / 100);
+
+function balanceAt(s, m) {
+  const { ratio } = investmentRates(s);
+  const n = m - s.start;
+  const grown = s.initial * Math.pow(ratio, n);
+  if (s.kind !== 'investment') return grown;
+  // Contributions (plus any employer match) land at the end of each month, then compound.
+  const monthly = s.contribution * (1 + (INVESTMENT_TYPES[s.investmentType].match ? s.matchPct : 0) / 100);
+  const g = ratio - 1;
+  return grown + (Math.abs(g) < 1e-12 ? monthly * n : (monthly * (Math.pow(ratio, n) - 1)) / g);
+}
+const remainingBalance = (s) => balanceAt(s, s.end);
+
+function afterTaxBalance(s) {
+  const balance = remainingBalance(s);
+  const tax = INVESTMENT_TYPES[s.investmentType].taxLabel ? s.taxPct / 100 : 0;
+  if (s.investmentType !== 'stock') return balance * (1 - tax);
+  // Only growth is taxed; the money you put in comes back out tax-free.
+  const basis = s.initial + s.contribution * (s.end - s.start);
+  return balance - Math.max(0, balance - basis) * tax;
+}
 
 function sourceTotal(s) {
-  const months = s.end - s.start;
-  if (s.kind === 'expense') {
+  if (!s.investment) {
     let total = 0;
     for (let m = s.start; m < s.end; m++) total += amountAt(s, m);
     return total;
   }
-  if (!s.investment) return s.monthly * months;
+  const months = s.end - s.start;
   const { withdraw, ratio } = investmentRates(s);
   const series = Math.abs(1 - ratio) < 1e-12 ? months : (1 - Math.pow(ratio, months)) / (1 - ratio);
-  return s.initial * withdraw * series * taxFactor();
+  return s.initial * withdraw * series * (1 - taxPctOf(s) / 100);
 }
 
-const monthlyTotal = (m, kind) => state.sources
-  .reduce((sum, s) => (s.kind === kind && s.active ? sum + amountAt(s, m) : sum), 0);
+const monthlyTotal = (m, kind, amount = amountAt) => state.sources
+  .reduce((sum, s) => (s.kind === kind && s.active ? sum + amount(s, m) : sum), 0);
 
 // Surpluses go in; a deficit is withdrawn only if the balance can cover all of it, so it never goes negative.
 function computePiggyBank() {
@@ -810,10 +1034,14 @@ function ageAt(m) {
   return age >= 0 ? age : null;
 }
 
+const NO_BIRTH_YEAR = 'no year of birth set';
+const noBirthYearTag = (text = NO_BIRTH_YEAR) => Object.assign(document.createElement('span'), { className: 'no-birth', textContent: text });
+
 const validBirthYear = (y) => (Number.isInteger(y) && y >= 1900 && y <= 2080 ? y : null);
 const validTaxRate = (r) => (Number.isInteger(r) ? clamp(r, 0, 100) : 0);
 const validInflationRate = (r) => (Number.isFinite(r) ? clamp(r, 0, 100) : 0);
-const validInflationYear = (y) => (Number.isInteger(y) && y >= BASE_YEAR && y <= 2080 ? y : BASE_YEAR);
+const validInflationYear = (y) => (Number.isInteger(y) && y >= BASE_YEAR && y <= END_YEAR ? y : BASE_YEAR);
+const validNodeWidth = (w, min) => (Number.isFinite(w) ? clamp(Math.round(w), min, MAX_NODE_W) : min);
 
 // ---------- Persistence ----------
 
@@ -866,6 +1094,7 @@ function saveState() {
 // Replaces the current timeline with the given saved one (by default the active project's).
 function loadState(saved = readJSON(projectKey(projects.activeId))) {
   savedSnapshot = null;
+  selection = null;
   for (const el of sourceEls.values()) el.root.remove();
   sourceEls.clear();
   laneOf.clear();
@@ -877,20 +1106,25 @@ function loadState(saved = readJSON(projectKey(projects.activeId))) {
   $('birth-year').value = state.birthYear ?? '';
   $('start-year').value = state.startYear;
   $('end-year').value = state.endYear;
-  $('tax-rate').value = state.taxRate;
   $('inflation-rate').value = state.inflationRate;
   $('inflation-year').value = state.inflationYear;
 }
 
 function applySavedState(saved) {
   const isInt = Number.isInteger;
-  const sources = Array.isArray(saved.sources) ? saved.sources : [];
+  const shift = ((isInt(saved.baseYear) ? saved.baseYear : LEGACY_BASE_YEAR) - BASE_YEAR) * 12;
+  const sources = (Array.isArray(saved.sources) ? saved.sources : [])
+    .map((s) => (s && typeof s === 'object' ? { ...s, start: s.start + shift, end: s.end + shift } : s));
   state.sources = sources
     .filter((s) => s && isInt(s.id) && s.id >= 1 && isInt(s.start) && isInt(s.end)
       && s.start >= 0 && s.start < s.end && s.end <= MAX_MONTH && Number.isFinite(s.monthly))
     .map((s) => {
-      const kind = s.kind === 'expense' ? 'expense' : 'income';
+      const kind = Object.hasOwn(KINDS, s.kind) ? s.kind : 'income';
       const name = String(s.name ?? '');
+      const investment = kind === 'income' && s.investment === true;
+      let taxPct = Number.isFinite(s.taxPct) ? clamp(s.taxPct, 0, 100) : 0;
+      // Older saves taxed every investment at one project-wide rate.
+      if (investment && 'taxRate' in saved) taxPct = validTaxRate(saved.taxRate);
       return {
         id: s.id,
         kind,
@@ -900,17 +1134,23 @@ function applySavedState(saved) {
         end: s.end,
         active: s.active !== false && canActivate({ name }),
         color: colorFor(kind, s.id),
-        investment: kind === 'income' && s.investment === true,
+        investment,
         initial: Number.isFinite(s.initial) ? Math.max(0, s.initial) : DEFAULT_INITIAL,
         withdrawPct: Number.isFinite(s.withdrawPct) ? clamp(s.withdrawPct, 0, 100) : DEFAULT_WITHDRAW_PCT,
         growthPct: Number.isFinite(s.growthPct) ? clamp(s.growthPct, -100, 100) : DEFAULT_GROWTH_PCT,
+        incomeGrowthPct: Number.isFinite(s.incomeGrowthPct) ? clamp(s.incomeGrowthPct, -100, 100) : 0,
+        taxPct,
+        headW: validNodeWidth(s.headW, HEAD_W),
+        tailW: validNodeWidth(s.tailW, TAIL_W),
+        investmentType: Object.hasOwn(INVESTMENT_TYPES, s.investmentType) ? s.investmentType : 'stock',
+        contribution: Number.isFinite(s.contribution) ? Math.max(0, s.contribution) : 0,
+        matchPct: Number.isFinite(s.matchPct) ? clamp(s.matchPct, 0, 200) : 0,
       };
     });
 
   const maxId = state.sources.reduce((max, s) => Math.max(max, s.id), 0);
   state.nextId = Math.max(maxId + 1, isInt(saved.nextId) ? saved.nextId : 1);
   state.birthYear = validBirthYear(saved.birthYear);
-  state.taxRate = validTaxRate(saved.taxRate);
   state.inflationRate = validInflationRate(saved.inflationRate);
   state.inflationYear = validInflationYear(saved.inflationYear);
   if (isInt(saved.startYear)) state.startYear = clamp(saved.startYear, BASE_YEAR, END_YEAR - 1);
@@ -920,7 +1160,7 @@ function applySavedState(saved) {
   state.viewEnd = rangeEnd();
   if (Number.isFinite(saved.viewStart) && Number.isFinite(saved.viewEnd)) {
     const viewSpan = clamp(saved.viewEnd - saved.viewStart, MIN_SPAN, rangeEnd() - rangeStart());
-    state.viewStart = clamp(saved.viewStart, rangeStart(), rangeEnd() - viewSpan);
+    state.viewStart = clamp(saved.viewStart + shift, rangeStart(), rangeEnd() - viewSpan);
     state.viewEnd = state.viewStart + viewSpan;
   }
 }
@@ -1009,8 +1249,9 @@ async function importProject(file) {
   createProject(name.slice(0, PROJECT_NAME_MAX), data.state);
 }
 
-function deleteProject(p) {
-  if (!confirm(`Delete project "${p.name}"? This cannot be undone.`)) return;
+async function deleteProject(p) {
+  const message = `Delete project "${p.name}"? This cannot be undone.`;
+  if (!(await confirmDelete('Delete project', message, '#4e9af1'))) return;
   projects.list = projects.list.filter((x) => x !== p);
   removeStored(projectKey(p.id));
   if (!projects.list.length) addProject();
@@ -1165,17 +1406,21 @@ function drawTimeline() {
   }
 }
 
-let hatch = null;
+const hatches = new Map();
+// Months dragged out on the summary bar; the next new source takes them as its start/end.
+let selection = null;
+let selecting = false;
+const rangeLabel = ({ start, end }) => `${monthLabel(start)} \u2013 ${monthLabel(end - 1)}`;
 
-// Diagonal stripes for deficits the piggy bank cannot cover; segments at the corners make the tile seamless.
-function hatchTile() {
-  if (hatch) return hatch;
+// Diagonal stripes in the given color; segments at the corners make the tile seamless.
+function hatchTile(color) {
+  if (hatches.has(color)) return hatches.get(color);
   const size = 8;
-  hatch = document.createElement('canvas');
+  const hatch = document.createElement('canvas');
   hatch.width = size;
   hatch.height = size;
   const c = hatch.getContext('2d');
-  c.strokeStyle = '#e05252';
+  c.strokeStyle = color;
   c.lineWidth = 2;
   c.beginPath();
   c.moveTo(0, size);
@@ -1185,6 +1430,7 @@ function hatchTile() {
   c.moveTo(size - 1, size + 1);
   c.lineTo(size + 1, size - 1);
   c.stroke();
+  hatches.set(color, hatch);
   return hatch;
 }
 
@@ -1203,6 +1449,25 @@ function drawSummary() {
     ctx.stroke();
   }
 
+  if (selection) {
+    const x0 = monthToX(selection.start);
+    const x1 = monthToX(selection.end);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(x0, 0, x1 - x0, h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath();
+    for (const x of [x0, x1]) {
+      ctx.moveTo(Math.round(x) + 0.5, 0);
+      ctx.lineTo(Math.round(x) + 0.5, h);
+    }
+    ctx.stroke();
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillStyle = '#e6e9ef';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(rangeLabel(selection), Math.max(x0, 0) + 4, 22);
+  }
+
   const income = [];
   const expenses = [];
   for (let m = first; m < last; m++) {
@@ -1213,23 +1478,32 @@ function drawSummary() {
   if (!max) return;
 
   const scale = (h - 32) / max;
-  const drawSteps = (totals, fill, stroke) => {
+  const yOf = (v) => h - v * scale;
+  const traceSteps = (values) => values.forEach((v, i) => {
+    ctx[i === 0 ? 'moveTo' : 'lineTo'](monthToX(first + i), yOf(v));
+    ctx.lineTo(monthToX(first + i + 1), yOf(v));
+  });
+  // Fills between two step series; separate bands never overlap, so their colors don't blend.
+  const fillBand = (top, bottom, fill) => {
     ctx.beginPath();
-    ctx.moveTo(monthToX(first), h);
-    totals.forEach((t, i) => {
-      const y = h - t * scale;
-      ctx.lineTo(monthToX(first + i), y);
-      ctx.lineTo(monthToX(first + i + 1), y);
-    });
-    ctx.lineTo(monthToX(last), h);
+    traceSteps(top);
+    for (let i = bottom.length - 1; i >= 0; i--) {
+      ctx.lineTo(monthToX(first + i + 1), yOf(bottom[i]));
+      ctx.lineTo(monthToX(first + i), yOf(bottom[i]));
+    }
     ctx.closePath();
     ctx.fillStyle = fill;
     ctx.fill();
+  };
+  const strokeSteps = (values, stroke) => {
+    ctx.beginPath();
+    traceSteps(values);
     ctx.strokeStyle = stroke;
     ctx.stroke();
   };
-  drawSteps(income, 'rgba(78,154,241,0.25)', '#4e9af1');
-  drawSteps(expenses, 'rgba(224,82,82,0.2)', '#e05252');
+  const covered = income.map((v, i) => Math.min(v, expenses[i]));
+  fillBand(covered, covered.map(() => 0), ctx.createPattern(hatchTile('#2f6b4a'), 'repeat'));
+  fillBand(income, covered, 'rgba(95,211,141,0.25)');
 
   ctx.fillStyle = 'rgba(245,197,66,0.55)';
   for (let i = 0; i < income.length; i++) {
@@ -1239,13 +1513,17 @@ function drawSummary() {
     ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
   }
 
-  ctx.fillStyle = ctx.createPattern(hatchTile(), 'repeat');
+  // Deficits the piggy bank cannot cover.
+  ctx.fillStyle = ctx.createPattern(hatchTile('#e05252'), 'repeat');
   for (let i = 0; i < income.length; i++) {
     if (expenses[i] <= income[i] || piggyBank.covered[first + i]) continue;
     const x0 = monthToX(first + i);
     const top = h - expenses[i] * scale;
     ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
   }
+
+  strokeSteps(income, '#5fd38d');
+  strokeSteps(expenses, '#2f6b4a');
 
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillStyle = '#8a93a6';
@@ -1258,20 +1536,29 @@ function drawSummary() {
 
 function addSource(kind, month) {
   const id = state.nextId++;
-  const start = clamp(month, rangeStart(), rangeEnd() - 1);
+  const start = clamp(selection?.start ?? month, rangeStart(), rangeEnd() - 1);
+  const end = clamp(selection?.end ?? start + 1, start + 1, rangeEnd());
+  selection = null;
   const s = {
     id,
     kind,
     name: `${KINDS[kind].label} ${id}`,
     monthly: 1000,
     start,
-    end: start + 1,
+    end,
     active: true,
     color: colorFor(kind, id),
     investment: false,
     initial: DEFAULT_INITIAL,
     withdrawPct: DEFAULT_WITHDRAW_PCT,
     growthPct: DEFAULT_GROWTH_PCT,
+    incomeGrowthPct: 0,
+    taxPct: 0,
+    headW: HEAD_W,
+    tailW: TAIL_W,
+    investmentType: 'stock',
+    contribution: 0,
+    matchPct: 0,
   };
   state.sources.push(s);
   sourceEls.set(id, createSourceEl(s));
@@ -1303,24 +1590,35 @@ function createSourceEl(s) {
   root.className = s.investment ? 'source investment' : 'source';
   root.dataset.id = s.id;
   root.style.setProperty('--color', s.color);
-  const amountRows = s.investment
-    ? `<div class="row">$<input type="text" inputmode="numeric" class="initial" title="Initial amount"></div>
-       <div class="row"><input type="number" class="pct" min="0" max="100" step="0.5" title="Yearly withdrawal % of current balance">% draw/yr</div>
-       <div class="row"><input type="number" class="growth" min="-100" max="100" step="0.5" title="Yearly growth %">% growth/yr</div>`
-    : '<div class="row">$<input type="text" inputmode="numeric" class="amount">/mo</div>';
+  const type = INVESTMENT_TYPES[s.investmentType];
+  const isInvestment = s.kind === 'investment';
+  const isPot = s.investment || isInvestment;
+  const amountRows = isPot
+    ? `<div class="row">$<input type="text" inputmode="numeric" class="initial" title="Initial amount">${MONEY_STEPPER}</div>
+       ${s.investment ? '<div class="row"><input type="number" class="pct" min="0" max="100" step="0.5" title="Yearly withdrawal % of current balance">% draw/yr</div>' : ''}
+       ${isInvestment ? `<div class="row">$<input type="text" inputmode="numeric" class="contribution" title="Monthly contribution">${MONEY_STEPPER}/mo${type.match ? ' <input type="number" class="match-pct" min="0" max="200" step="1" title="Employer match, % of your contribution">% match' : ''}</div>` : ''}
+       <div class="row growth-row"><input type="number" class="growth" min="-100" max="100" step="0.1" title="Yearly growth %">% growth/yr</div>
+       ${isInvestment && type.taxLabel ? `<div class="row tax-row"><input type="number" class="tax-pct" min="0" max="100" step="0.1" title="${type.taxLabel}">% ${type.taxLabel.toLowerCase()}</div>` : ''}`
+    : `<div class="row">$<input type="text" inputmode="numeric" class="amount">${MONEY_STEPPER}/mo</div>
+       ${s.kind === 'income' ? '<div class="row growth-row"><input type="number" class="income-growth" min="-100" max="100" step="0.1" title="Yearly growth %">% growth/yr</div>' : ''}`;
   root.innerHTML = `
     <div class="head">
+      <div class="resize-grip" title="Drag to resize"></div>
       <div class="row">
         <input type="checkbox" class="active" title="Active">
         <input type="text" class="name" maxlength="40">
+        ${isInvestment ? `<span class="inv-type">${type.label}</span>${infoButton(s.investmentType, `About ${type.label}`)}` : ''}
+        <span class="date start"></span>
         <button type="button" class="delete" title="Remove">&times;</button>
       </div>
       ${amountRows}
-      <div class="date start"></div>
+      ${s.kind === 'income' ? `<div class="row tax-row"><input type="number" class="tax-pct" min="0" max="100" step="0.1" title="Tax rate">% tax ${TAX_INFO_BUTTON}</div>` : ''}
     </div>
     <div class="tail">
+      <div class="resize-grip" title="Drag to resize"></div>
       <div class="total"></div>
       ${s.investment ? '<div class="remaining"></div>' : ''}
+      ${isInvestment ? '<div class="after-tax"></div>' : ''}
       <div class="date end"></div>
     </div>`;
 
@@ -1339,27 +1637,38 @@ function createSourceEl(s) {
   });
   q('.name').addEventListener('input', (e) => {
     s.name = e.target.value;
+    fitNameInput(e.target);
     if (s.active && !canActivate(s)) {
       s.active = false;
       q('.active').checked = false;
-      render();
-    } else {
-      saveState();
     }
+    render();
   });
-  q('.delete').addEventListener('click', () => {
-    if (confirm(`Delete "${s.name || '(unnamed)'}"? This cannot be undone.`)) removeSource(s.id);
+  q('.delete').addEventListener('click', async () => {
+    const message = `Delete "${s.name || '(unnamed)'}"? This cannot be undone.`;
+    if (await confirmDelete(`Delete ${KINDS[s.kind].label.toLowerCase()}`, message, s.color)) removeSource(s.id);
   });
-  if (s.investment) {
+  if (isPot) {
     bindMoneyInput(q('.initial'), 1000, () => s.initial, (v) => { s.initial = v; });
-    q('.pct').value = s.withdrawPct;
     q('.growth').value = s.growthPct;
-    q('.pct').addEventListener('input', (e) => { s.withdrawPct = clamp(Number(e.target.value) || 0, 0, 100); render(); });
     q('.growth').addEventListener('input', (e) => { s.growthPct = clamp(Number(e.target.value) || 0, -100, 100); render(); });
-  } else {
-    bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
   }
-  if (s.kind === 'income') root.addEventListener('contextmenu', (e) => openContextMenu(e, s));
+  if (s.investment) {
+    q('.pct').value = s.withdrawPct;
+    q('.pct').addEventListener('input', (e) => { s.withdrawPct = clamp(Number(e.target.value) || 0, 0, 100); render(); });
+  } else if (!isPot) {
+    bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+    if (s.kind === 'income') bindIncomeGrowthInput(q('.income-growth'), s);
+  }
+  if (isInvestment) {
+    bindMoneyInput(q('.contribution'), 100, () => s.contribution, (v) => { s.contribution = v; });
+    if (type.match) bindMatchInput(q('.match-pct'), s);
+    if (type.taxLabel) bindTaxInput(q('.tax-pct'), s);
+  }
+  if (s.kind === 'income') {
+    bindTaxInput(q('.tax-pct'), s);
+    root.addEventListener('contextmenu', (e) => openContextMenu(e, s));
+  }
 
   const refs = {
     root,
@@ -1369,16 +1678,56 @@ function createSourceEl(s) {
     endLabel: q('.date.end'),
     totalLabel: q('.total'),
     remainingLabel: q('.remaining'),
+    afterTaxLabel: q('.after-tax'),
     activeBox: q('.active'),
   };
   enableEdgeDrag(refs.head, s, 'start');
   enableEdgeDrag(refs.tail, s, 'end');
+  // The head grows leftward (its right edge marks the start month); the tail grows rightward.
+  enableResize(refs.head.querySelector('.resize-grip'), s, 'headW', HEAD_W, -1);
+  enableResize(refs.tail.querySelector('.resize-grip'), s, 'tailW', TAIL_W, 1);
   KINDS[s.kind].bar.appendChild(root);
+  fitNameInput(q('.name'));
   return refs;
 }
 
+const measureCtx = document.createElement('canvas').getContext('2d');
+
+// Inputs don't size to their text, so set the width explicitly and let the head grow around it.
+function fitNameInput(input) {
+  const cs = getComputedStyle(input);
+  measureCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  input.style.width = `${Math.ceil(measureCtx.measureText(input.value).width) + 2}px`;
+}
+
+function bindIncomeGrowthInput(input, s) {
+  input.value = s.incomeGrowthPct;
+  input.addEventListener('input', () => { s.incomeGrowthPct = clamp(Number(input.value) || 0, -100, 100); render(); });
+}
+
+const infoButton = (key, title) => `<button type="button" class="info-btn" data-info="${key}" title="${title}" aria-label="${title}">&#9432;</button>`;
+const TAX_INFO_BUTTON = infoButton('tax', 'How tax is calculated');
+
+function bindMatchInput(input, s) {
+  input.value = s.matchPct;
+  input.addEventListener('input', () => { s.matchPct = clamp(Number(input.value) || 0, 0, 200); render(); });
+}
+
+function bindTaxInput(input, s) {
+  input.value = s.taxPct;
+  input.addEventListener('input', () => { s.taxPct = clamp(Number(input.value) || 0, 0, 100); render(); });
+}
+
+const MONEY_FINE_STEP = 100;
+const MONEY_STEPPER = `<span class="money-step"><button type="button" class="money-up" title="+$${MONEY_FINE_STEP}" aria-label="Increase by $${MONEY_FINE_STEP}">&#9650;</button><button type="button" class="money-down" title="&minus;$${MONEY_FINE_STEP}" aria-label="Decrease by $${MONEY_FINE_STEP}">&#9660;</button></span>`;
+
 // Whole-dollar text input shown with thousands separators; arrow keys step like a number input.
 function bindMoneyInput(input, step, get, set) {
+  const nudge = (delta) => {
+    set(Math.max(0, get() + delta));
+    input.value = withCommas(get());
+    render();
+  };
   input.value = withCommas(get());
   input.addEventListener('input', () => {
     const raw = input.value;
@@ -1397,10 +1746,10 @@ function bindMoneyInput(input, step, get, set) {
   input.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
-    set(Math.max(0, get() + (e.key === 'ArrowUp' ? step : -step)));
-    input.value = withCommas(get());
-    render();
+    nudge(e.key === 'ArrowUp' ? step : -step);
   });
+  input.parentElement.querySelector('.money-up').addEventListener('click', () => nudge(MONEY_FINE_STEP));
+  input.parentElement.querySelector('.money-down').addEventListener('click', () => nudge(-MONEY_FINE_STEP));
 }
 
 function enableEdgeDrag(handle, s, edge) {
@@ -1433,15 +1782,45 @@ function enableEdgeDrag(handle, s, edge) {
   });
 }
 
+function enableResize(grip, s, prop, minW, dir) {
+  grip.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    grip.setPointerCapture(e.pointerId);
+    dragging = true;
+    const originX = e.clientX;
+    const originW = grip.parentElement.offsetWidth;
+
+    const onMove = (ev) => {
+      s[prop] = validNodeWidth(originW + dir * (ev.clientX - originX), minW);
+      render();
+    };
+    const onUp = () => {
+      dragging = false;
+      render();
+      grip.removeEventListener('pointermove', onMove);
+      grip.removeEventListener('pointerup', onUp);
+      grip.removeEventListener('pointercancel', onUp);
+    };
+    grip.addEventListener('pointermove', onMove);
+    grip.addEventListener('pointerup', onUp);
+    grip.addEventListener('pointercancel', onUp);
+  });
+}
+
 function layoutSources(kind) {
   const sources = state.sources.filter((s) => s.kind === kind);
   for (const s of sources) sourceEls.get(s.id).root.hidden = !inRange(s);
-  const placed = sources
-    .filter(inRange)
+  const visible = sources.filter(inRange);
+  // Write every label before reading any width, so measuring costs a single reflow.
+  for (const s of visible) updateSourceLabels(s);
+  const placed = visible
     .map((s) => {
+      const { head, tail } = sourceEls.get(s.id);
+      const tailW = tail.offsetWidth;
       // Head sits left of the start month, tail sits right of the end month.
-      const x0 = monthToX(s.start) - HEAD_W;
-      return { s, x0, x1: monthToX(s.end) + TAIL_W };
+      return { s, tailW, x0: monthToX(s.start) - head.offsetWidth, x1: monthToX(s.end) + tailW };
     })
     .sort((a, b) => a.x0 - b.x0 || a.s.id - b.s.id);
 
@@ -1462,7 +1841,7 @@ function layoutSources(kind) {
   KINDS[kind].bar.style.height = `${Math.max(BAR_H, LANES_TOP + laneEnds.length * LANE_H + 8)}px`;
 }
 
-function positionSource({ s, x0, x1 }, lane) {
+function positionSource({ s, tailW, x0, x1 }, lane) {
   const el = sourceEls.get(s.id);
   const width = x1 - x0;
   el.root.style.left = `${x0}px`;
@@ -1470,12 +1849,28 @@ function positionSource({ s, x0, x1 }, lane) {
   el.root.style.top = `${LANES_TOP + lane * LANE_H}px`;
   el.root.classList.toggle('inactive', !s.active);
   el.head.style.left = '0px';
-  el.tail.style.left = `${width - TAIL_W}px`;
+  el.tail.style.left = `${width - tailW}px`;
+}
 
-  el.startLabel.textContent = monthLabel(s.start);
-  el.endLabel.textContent = `to ${monthLabel(s.end - 1)}`;
-  el.totalLabel.textContent = money(sourceTotal(s));
+function updateSourceLabels(s) {
+  const el = sourceEls.get(s.id);
+  el.head.style.minWidth = `${s.headW}px`;
+  el.tail.style.minWidth = `${s.tailW}px`;
+
+  const showDateWithAge = (label, prefix, m) => {
+    const age = ageAt(m);
+    label.textContent = `${prefix}${monthLabel(m)}`;
+    if (state.birthYear === null) label.append(' ', noBirthYearTag(`(${NO_BIRTH_YEAR})`));
+    else if (age !== null) label.append(` (${age})`);
+  };
+  showDateWithAge(el.startLabel, '', s.start);
+  el.startLabel.title = `Starts ${monthLabel(s.start)}`;
+  showDateWithAge(el.endLabel, 'to ', s.end - 1);
+  el.totalLabel.textContent = s.kind === 'investment'
+    ? `${money(remainingBalance(s))} balance`
+    : money(sourceTotal(s)) + (s.kind === 'income' ? ' withdrawn' : '');
   if (el.remainingLabel) el.remainingLabel.textContent = `Remaining ${money(remainingBalance(s))}`;
+  if (el.afterTaxLabel) el.afterTaxLabel.textContent = `${money(afterTaxBalance(s))} after tax`;
 }
 
 // ---------- Context menu ----------
@@ -1510,12 +1905,91 @@ function parseMonthValue(value) {
 function openSourceDialog(s) {
   sourceDialog.className = s.kind;
   sourceDialog.style.setProperty('--color', s.color);
+  if (s.kind === 'investment') renderTypePicker(s);
+  else renderSourceForm(s);
+
+  sourceDialog.addEventListener('close', () => {
+    if (sourceDialog.returnValue === 'cancel') {
+      removeSource(s.id);
+      return;
+    }
+    if (!canActivate(s)) s.active = false;
+    rebuildSourceEl(s);
+    render();
+  }, { once: true });
+  dragLabel.hidden = true;
+  sourceDialog.returnValue = '';
+  sourceDialog.showModal();
+  sourceDialog.querySelector('.name')?.select();
+}
+
+function renderTypePicker(s) {
   sourceDialog.innerHTML = `
     <form method="dialog">
-      <h2>New ${KINDS[s.kind].label.toLowerCase()}</h2>
+      <h2>New investment</h2>
+      <p class="hint">What type of account is it?</p>
+      ${Object.entries(INVESTMENT_TYPES).map(([key, { label }]) => `<div class="type-option">
+        <button type="button" class="pick-type" data-type="${key}">${label}</button>
+        ${infoButton(key, `About ${label}`)}
+      </div>`).join('')}
+      <div class="prop-actions"><button type="button" class="cancel">Cancel</button></div>
+    </form>`;
+  sourceDialog.querySelector('.cancel').addEventListener('click', () => sourceDialog.close('cancel'));
+  for (const button of sourceDialog.querySelectorAll('.pick-type')) {
+    button.addEventListener('click', () => {
+      s.investmentType = button.dataset.type;
+      rebuildSourceEl(s);
+      render();
+      renderSourceForm(s);
+      sourceDialog.querySelector('.name').select();
+    });
+  }
+}
+
+function openInvestmentInfo(key) {
+  for (const section of investmentInfo.querySelectorAll('section')) section.hidden = section.dataset.type !== key;
+  investmentInfo.showModal();
+}
+
+// Resolves true only when the user clicks Delete; Cancel and Escape count as no.
+function confirmDelete(title, message, color) {
+  confirmDialog.style.setProperty('--color', color);
+  $('confirm-title').textContent = title;
+  $('confirm-message').textContent = message;
+  confirmDialog.returnValue = '';
+  confirmDialog.showModal();
+  return new Promise((resolve) => {
+    confirmDialog.addEventListener('close', () => resolve(confirmDialog.returnValue === 'delete'), { once: true });
+  });
+}
+
+function renderSourceForm(s) {
+  const type = INVESTMENT_TYPES[s.investmentType];
+  const isInvestment = s.kind === 'investment';
+  const investmentToggle = s.kind === 'income'
+    ? '<label class="prop">Investment <input type="checkbox" class="investment"></label>'
+    : '';
+  const investmentRows = s.kind !== 'expense'
+    ? `<label class="prop invest-row">Initial amount <span>$<input type="text" inputmode="numeric" class="initial">${MONEY_STEPPER}</span></label>
+      ${s.kind === 'income' ? '<label class="prop invest-row">Withdrawal / yr <span><input type="number" class="pct" min="0" max="100" step="0.5">%</span></label>' : ''}
+      ${isInvestment ? `<label class="prop invest-row">Monthly contribution <span>$<input type="text" inputmode="numeric" class="contribution">${MONEY_STEPPER}</span></label>` : ''}
+      ${isInvestment && type.match ? '<label class="prop invest-row">Employer match <span><input type="number" class="match-pct" min="0" max="200" step="1">%</span></label>' : ''}
+      <label class="prop invest-row">Growth / yr <span><input type="number" class="growth" min="-100" max="100" step="0.1">%</span></label>
+      ${isInvestment && type.taxLabel ? `<label class="prop invest-row">${type.taxLabel} <span><input type="number" class="tax-pct" min="0" max="100" step="0.1">%</span></label>` : ''}`
+    : '';
+  const monthlyRow = s.kind !== 'investment'
+    ? `<label class="prop monthly-row">Monthly amount <span>$<input type="text" inputmode="numeric" class="amount">${MONEY_STEPPER}</span></label>`
+    : '';
+  sourceDialog.innerHTML = `
+    <form method="dialog">
+      <h2>New ${isInvestment ? type.label : KINDS[s.kind].label.toLowerCase()}</h2>
+      ${investmentToggle}
       <label class="prop">Name <input type="text" class="name" maxlength="40"></label>
       <p class="hint">Names starting with "Income" or "Expense" are left inactive.</p>
-      <label class="prop">Monthly amount <span>$<input type="text" inputmode="numeric" class="amount"></span></label>
+      ${investmentRows}
+      ${monthlyRow}
+      ${s.kind === 'income' ? `<label class="prop monthly-row">Growth / yr <span><input type="number" class="income-growth" min="-100" max="100" step="0.1">%</span></label>
+      <div class="prop"><span>Tax rate ${TAX_INFO_BUTTON}</span><span><input type="number" class="tax-pct" min="0" max="100" step="0.1" aria-label="Tax rate">%</span></div>` : ''}
       <label class="prop">Start <input type="month" class="start"></label>
       <label class="prop">End <input type="month" class="end"></label>
       <div class="prop-actions">
@@ -1531,7 +2005,36 @@ function openSourceDialog(s) {
   q('.cancel').addEventListener('click', () => sourceDialog.close('cancel'));
   nameInput.value = s.name;
   nameInput.addEventListener('input', () => { s.name = nameInput.value; saveState(); });
-  bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+  if (monthlyRow) bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+  if (investmentRows) {
+    bindMoneyInput(q('.initial'), 1000, () => s.initial, (v) => { s.initial = v; });
+    q('.growth').value = s.growthPct;
+    q('.growth').addEventListener('input', (e) => { s.growthPct = clamp(Number(e.target.value) || 0, -100, 100); render(); });
+  }
+  if (isInvestment) {
+    bindMoneyInput(q('.contribution'), 100, () => s.contribution, (v) => { s.contribution = v; });
+    if (type.match) bindMatchInput(q('.match-pct'), s);
+    if (type.taxLabel) bindTaxInput(q('.tax-pct'), s);
+  }
+
+  const investmentBox = q('.investment');
+  const showAmountRows = () => {
+    const isPot = s.investment || s.kind === 'investment';
+    for (const row of sourceDialog.querySelectorAll('.monthly-row')) row.hidden = isPot;
+    for (const row of sourceDialog.querySelectorAll('.invest-row')) row.hidden = !isPot;
+  };
+  if (investmentBox) {
+    bindIncomeGrowthInput(q('.income-growth'), s);
+    bindTaxInput(q('.tax-pct'), s);
+    investmentBox.checked = s.investment;
+    investmentBox.addEventListener('change', () => {
+      toggleInvestment(s);
+      showAmountRows();
+    });
+    q('.pct').value = s.withdrawPct;
+    q('.pct').addEventListener('input', (e) => { s.withdrawPct = clamp(Number(e.target.value) || 0, 0, 100); render(); });
+  }
+  showAmountRows();
 
   const showDates = () => {
     startInput.value = monthValue(s.start);
@@ -1551,20 +2054,6 @@ function openSourceDialog(s) {
     input.addEventListener('change', applyDates);
   }
   showDates();
-
-  sourceDialog.addEventListener('close', () => {
-    if (sourceDialog.returnValue === 'cancel') {
-      removeSource(s.id);
-      return;
-    }
-    if (!canActivate(s)) s.active = false;
-    rebuildSourceEl(s);
-    render();
-  }, { once: true });
-  dragLabel.hidden = true;
-  sourceDialog.returnValue = '';
-  sourceDialog.showModal();
-  nameInput.select();
 }
 
 // ---------- Hover tooltip ----------
@@ -1638,14 +2127,22 @@ function showTooltip(e) {
 
   tooltipDate.textContent = monthLabel(m);
   const age = ageAt(m);
-  tooltipAge.hidden = age === null;
-  tooltipAge.textContent = `Age ${age}`;
+  tooltipAge.hidden = age === null && state.birthYear !== null;
+  tooltipAge.textContent = state.birthYear === null ? NO_BIRTH_YEAR : `Age ${age}`;
+  tooltipAge.classList.toggle('no-birth', state.birthYear === null);
   tooltipTotal.textContent = `Income ${money(total)} / month`;
   tooltipExpenses.textContent = `Expenses ${money(expenses)} / month`;
   tooltipInflation.textContent = `Inflation multiplier ×${inflationFactor(m).toFixed(3)}`;
   const yearStart = m - (m % 12);
   let yearlyIncome = 0;
-  for (let i = yearStart; i < yearStart + 12; i++) yearlyIncome += monthlyTotal(i, 'income');
+  let yearlyGross = 0;
+  for (let i = yearStart; i < yearStart + 12; i++) {
+    yearlyIncome += monthlyTotal(i, 'income');
+    yearlyGross += monthlyTotal(i, 'income', grossAt);
+  }
+  tooltipYearTitle.textContent = `${BASE_YEAR + yearStart / 12} totals`;
+  tooltipYearIncome.textContent = money(yearlyGross);
+  tooltipYearTaxes.textContent = money(yearlyGross - yearlyIncome);
   tooltipNet.textContent = `Net ${money(net)} / month (Yearly ${money(yearlyIncome)})`;
   tooltipNet.classList.toggle('negative', net < 0);
   tooltipPiggy.textContent = `Piggy bank ${money(piggyBank.balance[m])}`
@@ -1658,10 +2155,17 @@ function showTooltip(e) {
 
 function showDragLabel(e, m, s = null) {
   const age = ageAt(m);
-  let text = age === null ? monthLabel(m) : `Age ${age} · ${monthLabel(m)}`;
+  dragLabel.replaceChildren();
+  if (state.birthYear === null) dragLabel.append(noBirthYearTag(), ' · ');
+  else if (age !== null) dragLabel.append(`Age ${age} · `);
+  dragLabel.append(monthLabel(m));
   // Head and tail sit outside the source's months, so clamp to its nearest month.
-  if (s) text += `\n${s.name || '(unnamed)'}: Effective ${money(amountAt(s, clamp(m, s.start, s.end - 1)))} / month`;
-  dragLabel.textContent = text;
+  if (s) {
+    const at = clamp(m, s.start, s.end - 1);
+    dragLabel.append(s.kind === 'investment'
+      ? `\n${s.name || '(unnamed)'}: Balance ${money(balanceAt(s, at))}`
+      : `\n${s.name || '(unnamed)'}: Effective ${money(amountAt(s, at))} / month`);
+  }
   dragLabel.hidden = false;
   placeAtMouse(dragLabel, e);
 }
@@ -1703,44 +2207,73 @@ timelineBar.addEventListener('wheel', (e) => {
   zoomAt(e.deltaY > 0 ? 1.2 : 1 / 1.2, xToMonth(localX(e, timelineBar)));
 }, { passive: false });
 
-timelineBar.addEventListener('pointerdown', (e) => {
-  if (e.button !== 0) return;
-  timelineBar.setPointerCapture(e.pointerId);
-  timelineBar.classList.add('panning');
-  const originX = e.clientX;
-  const originStart = state.viewStart;
+// Dragging the bar's empty space pans the view; drags starting on `ignore` are left alone.
+function enablePan(bar, ignore = null) {
+  bar.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || (ignore && e.target.closest(ignore))) return;
+    bar.setPointerCapture(e.pointerId);
+    bar.classList.add('panning');
+    const originX = e.clientX;
+    const originStart = state.viewStart;
 
-  const onMove = (ev) => setView(originStart - ((ev.clientX - originX) / barWidth()) * span(), span());
-  const onUp = () => {
-    timelineBar.classList.remove('panning');
-    timelineBar.removeEventListener('pointermove', onMove);
-    timelineBar.removeEventListener('pointerup', onUp);
-    timelineBar.removeEventListener('pointercancel', onUp);
-  };
-  timelineBar.addEventListener('pointermove', onMove);
-  timelineBar.addEventListener('pointerup', onUp);
-  timelineBar.addEventListener('pointercancel', onUp);
-});
+    const onMove = (ev) => setView(originStart - ((ev.clientX - originX) / barWidth()) * span(), span());
+    const onUp = () => {
+      bar.classList.remove('panning');
+      bar.removeEventListener('pointermove', onMove);
+      bar.removeEventListener('pointerup', onUp);
+      bar.removeEventListener('pointercancel', onUp);
+    };
+    bar.addEventListener('pointermove', onMove);
+    bar.addEventListener('pointerup', onUp);
+    bar.addEventListener('pointercancel', onUp);
+  });
+}
 
+enablePan(timelineBar);
 for (const [kind, { bar }] of Object.entries(KINDS)) {
-  let wasEditing = false;
-  // pointerdown fires before focus moves, so this still sees the edit box.
-  bar.addEventListener('pointerdown', () => {
-    wasEditing = Boolean(document.activeElement?.matches('.source input:not([type="checkbox"])'));
-  });
-  bar.addEventListener('click', (e) => {
-    if (wasEditing || e.target.closest('.source, .bar-head button')) return;
-    addSource(kind, Math.floor(xToMonth(localX(e, bar))));
-  });
+  enablePan(bar, '.source, .bar-head button');
   bar.querySelector('.add-node').addEventListener('click', () => {
     addSource(kind, Math.floor((state.viewStart + state.viewEnd) / 2));
   });
 }
 
-summaryBar.addEventListener('pointermove', showTooltip);
+summaryBar.addEventListener('pointermove', (e) => { if (!selecting) showTooltip(e); });
 summaryBar.addEventListener('pointerleave', () => { tooltip.hidden = true; });
 
-for (const bar of [timelineBar, sourcesBar, expensesBar]) {
+// A plain click clears the selection; it only starts once the pointer moves a few pixels.
+summaryBar.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  summaryBar.setPointerCapture(e.pointerId);
+  const monthAt = (ev) => clamp(Math.floor(xToMonth(localX(ev, summaryBar))), rangeStart(), rangeEnd() - 1);
+  const anchor = monthAt(e);
+  const originX = e.clientX;
+
+  const onMove = (ev) => {
+    if (!selecting && Math.abs(ev.clientX - originX) < 4) return;
+    selecting = true;
+    tooltip.hidden = true;
+    const m = monthAt(ev);
+    selection = { start: Math.min(anchor, m), end: Math.max(anchor, m) + 1 };
+    drawSummary();
+    dragLabel.textContent = rangeLabel(selection);
+    dragLabel.hidden = false;
+    placeAtMouse(dragLabel, ev);
+  };
+  const onUp = () => {
+    if (!selecting) selection = null;
+    selecting = false;
+    dragLabel.hidden = true;
+    drawSummary();
+    summaryBar.removeEventListener('pointermove', onMove);
+    summaryBar.removeEventListener('pointerup', onUp);
+    summaryBar.removeEventListener('pointercancel', onUp);
+  };
+  summaryBar.addEventListener('pointermove', onMove);
+  summaryBar.addEventListener('pointerup', onUp);
+  summaryBar.addEventListener('pointercancel', onUp);
+});
+
+for (const bar of [timelineBar, investmentsBar, sourcesBar, expensesBar]) {
   bar.addEventListener('pointermove', (e) => {
     if (dragging) return;
     const el = e.target.closest('.source');
@@ -1770,7 +2303,7 @@ $('toggle-income').addEventListener('click', () => toggleAll('income'));
 $('toggle-expenses').addEventListener('click', () => toggleAll('expense'));
 $('birth-year').addEventListener('input', (e) => {
   state.birthYear = validBirthYear(Number.parseInt(e.target.value, 10));
-  saveState();
+  render();
 });
 
 // Runs on change, not input, so half-typed years don't reshape the timeline.
@@ -1791,10 +2324,6 @@ function changeYearRange(edge, value) {
 }
 $('start-year').addEventListener('change', (e) => changeYearRange('start', e.target.value));
 $('end-year').addEventListener('change', (e) => changeYearRange('end', e.target.value));
-$('tax-rate').addEventListener('input', (e) => {
-  state.taxRate = validTaxRate(Number.parseInt(e.target.value, 10));
-  render();
-});
 $('inflation-rate').addEventListener('input', (e) => {
   state.inflationRate = validInflationRate(Number.parseFloat(e.target.value));
   render();
@@ -1813,6 +2342,11 @@ document.addEventListener('pointerdown', (e) => {
 });
 projectName.addEventListener('click', () => setDrawer(true));
 saveNote.addEventListener('click', () => saveInfo.showModal());
+document.addEventListener('click', (e) => {
+  const key = e.target.closest('.info-btn')?.dataset.info;
+  if (key === 'tax') taxInfo.showModal();
+  else if (key && Object.hasOwn(INVESTMENT_TYPES, key)) openInvestmentInfo(key);
+});
 $('drawer-backdrop').addEventListener('click', () => setDrawer(false));
 $('drawer-close').addEventListener('click', () => setDrawer(false));
 $('project-new').addEventListener('click', () => {
@@ -1828,7 +2362,12 @@ $('import-file').addEventListener('change', (e) => {
   if (file) importProject(file);
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
+  const popup = [taxInfo, investmentInfo, confirmDialog].find((d) => d.open);
+  if (e.key === 'Escape' && popup) {
+    // Left to itself, the browser may close the dialog or drawer underneath instead of the popup.
+    e.preventDefault();
+    popup.close();
+  } else if (e.key === 'Escape') {
     closeContextMenu();
     setDrawer(false);
     if (sourceDialog.open) sourceDialog.close('cancel');
