@@ -382,6 +382,47 @@ header {
 #source-dialog .hint { margin: -4px 0 0; font-size: 11px; color: #8a93a6; }
 #source-dialog .prop-actions button[type="submit"] { border-color: var(--color); }
 
+#expense-picker {
+  width: 380px;
+  padding: 16px;
+  background: #331010;
+  color: #e6e9ef;
+  color-scheme: dark;
+  border: 1px solid var(--color);
+  border-top-width: 4px;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+#expense-picker::backdrop { background: rgba(0, 0, 0, 0.45); }
+#expense-picker form { display: flex; flex-direction: column; gap: 8px; }
+#expense-picker h2 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#expense-picker h3 { margin: 8px 0 2px; font-size: 11px; color: #8a93a6; text-transform: uppercase; letter-spacing: 0.05em; }
+#expense-picker .pick-all-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 12px; color: #8a93a6; cursor: pointer; }
+#expense-picker .pick-all { margin: 0; accent-color: var(--color); cursor: pointer; }
+#expense-picker .hint { margin: 0; font-size: 11px; color: #8a93a6; }
+#expense-picker .picker-list { max-height: 50vh; overflow-y: auto; padding-right: 4px; }
+#expense-picker .pick-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 13px; cursor: pointer; }
+#expense-picker .pick-name { flex: 1; }
+#expense-picker .pick { margin: 0; accent-color: var(--color); cursor: pointer; }
+#expense-picker .pick-amount, #expense-picker .prop input {
+  padding: 2px 6px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+}
+#expense-picker .pick-amount { width: 80px; margin: 0 2px; }
+#expense-picker .prop input { width: 160px; }
+#expense-picker .add { border-color: var(--color); }
+#expense-picker .add:disabled { opacity: 0.5; cursor: default; }
+
 #confirm-dialog {
   width: 320px;
   padding: 16px;
@@ -458,7 +499,8 @@ header {
 body.drawer-open #drawer-backdrop { opacity: 1; pointer-events: auto; }
 body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
-.version { margin-bottom: 6px; font-size: 11px; color: #6f7a93; }
+.version { margin-bottom: 6px; font-size: 11px; color: #f5c542; }
+.refresh-hint { color: #8a93a6; }
 
 .drawer-head {
   display: flex;
@@ -483,7 +525,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 }
 #drawer-close:hover { color: #e6e9ef; }
 
-#project-new, .prop-actions button {
+#project-new, #common-expenses, .prop-actions button {
   padding: 6px 12px;
   background: #232c40;
   color: #e6e9ef;
@@ -493,7 +535,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
   font-size: 14px;
   cursor: pointer;
 }
-#project-new:hover, .prop-actions button:hover { background: #2d3852; }
+#project-new:hover, #common-expenses:hover, .prop-actions button:hover { background: #2d3852; }
 #project-new { margin-bottom: 12px; }
 .prop-actions { display: flex; gap: 6px; margin-top: 4px; }
 .prop-actions button { flex: 1; }
@@ -721,6 +763,8 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
   <dialog id="source-dialog" aria-label="New source"></dialog>
 
+  <dialog id="expense-picker" aria-labelledby="expense-picker-title"></dialog>
+
   <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
     <form method="dialog">
       <h2 id="confirm-title"></h2>
@@ -812,7 +856,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
   <div id="drawer-backdrop"></div>
   <aside id="project-drawer" aria-label="Projects">
-    <span class="version">v1.3</span>
+    <span class="version">v1.3<br><span class="refresh-hint">Ctrl+F5 on browser to refresh to latest version.</span></span>
     <div class="drawer-head">
       <h2>Projects</h2>
       <button type="button" id="drawer-close" title="Close">&times;</button>
@@ -831,6 +875,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
           <input type="number" id="end-year" min="2005" max="2100" step="5" aria-label="End year">
         </span>
       </div>
+      <button type="button" id="common-expenses">Choose common expenses</button>
       <div class="prop-actions">
         <button type="button" id="project-clone" title="Duplicate this project">Clone</button>
         <button type="button" id="project-export" title="Download this project as JSON">Export</button>
@@ -847,8 +892,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const BASE_YEAR = 2000;
 const END_YEAR = 2100;
 const MAX_MONTH = (END_YEAR - BASE_YEAR) * 12; // months are counted from Jan 2000
-// Saves from before `baseYear` was recorded counted months from Jan 2020.
+// Saves from before `baseYear` was recorded counted months from Jan 2020 and spanned at most 2020–2080.
 const LEGACY_BASE_YEAR = 2020;
+const LEGACY_END_YEAR = 2080;
 const MIN_SPAN = 12;
 const HEAD_W = 140;
 const TAIL_W = 120;
@@ -912,6 +958,7 @@ const saveInfo = $('save-info');
 const taxInfo = $('tax-info');
 const investmentInfo = $('investment-info');
 const confirmDialog = $('confirm-dialog');
+const expensePicker = $('expense-picker');
 
 // Investment-pane nodes only track a balance; the summary chart counts just income and expense.
 const KINDS = {
@@ -1153,12 +1200,17 @@ function applySavedState(saved) {
   state.birthYear = validBirthYear(saved.birthYear);
   state.inflationRate = validInflationRate(saved.inflationRate);
   state.inflationYear = validInflationYear(saved.inflationYear);
-  if (isInt(saved.startYear)) state.startYear = clamp(saved.startYear, BASE_YEAR, END_YEAR - 1);
-  if (isInt(saved.endYear)) state.endYear = clamp(saved.endYear, state.startYear + 1, END_YEAR);
+  // A legacy save showing the whole old span gets the whole new span (the defaults) instead.
+  const legacyFullRange = !isInt(saved.baseYear)
+    && saved.startYear === LEGACY_BASE_YEAR && saved.endYear === LEGACY_END_YEAR;
+  if (!legacyFullRange) {
+    if (isInt(saved.startYear)) state.startYear = clamp(saved.startYear, BASE_YEAR, END_YEAR - 1);
+    if (isInt(saved.endYear)) state.endYear = clamp(saved.endYear, state.startYear + 1, END_YEAR);
+  }
 
   state.viewStart = rangeStart();
   state.viewEnd = rangeEnd();
-  if (Number.isFinite(saved.viewStart) && Number.isFinite(saved.viewEnd)) {
+  if (!legacyFullRange && Number.isFinite(saved.viewStart) && Number.isFinite(saved.viewEnd)) {
     const viewSpan = clamp(saved.viewEnd - saved.viewStart, MIN_SPAN, rangeEnd() - rangeStart());
     state.viewStart = clamp(saved.viewStart + shift, rangeStart(), rangeEnd() - viewSpan);
     state.viewEnd = state.viewStart + viewSpan;
@@ -1534,11 +1586,8 @@ function drawSummary() {
 
 // ---------- Income & expense sources ----------
 
-function addSource(kind, month) {
+function newSource(kind, start, end, fields = {}) {
   const id = state.nextId++;
-  const start = clamp(selection?.start ?? month, rangeStart(), rangeEnd() - 1);
-  const end = clamp(selection?.end ?? start + 1, start + 1, rangeEnd());
-  selection = null;
   const s = {
     id,
     kind,
@@ -1559,9 +1608,18 @@ function addSource(kind, month) {
     investmentType: 'stock',
     contribution: 0,
     matchPct: 0,
+    ...fields,
   };
   state.sources.push(s);
   sourceEls.set(id, createSourceEl(s));
+  return s;
+}
+
+function addSource(kind, month) {
+  const start = clamp(selection?.start ?? month, rangeStart(), rangeEnd() - 1);
+  const end = clamp(selection?.end ?? start + 1, start + 1, rangeEnd());
+  selection = null;
+  const s = newSource(kind, start, end);
   render();
   openSourceDialog(s);
 }
@@ -1963,6 +2021,83 @@ function confirmDelete(title, message, color) {
   });
 }
 
+// Rough monthly starting points; users adjust them in the picker before adding.
+const COMMON_EXPENSES = [
+  ['Housing', [['Rent / mortgage', 2000], ['Property tax', 300], ['Home insurance', 150], ['Utilities', 250], ['Internet & phone', 150]]],
+  ['Food', [['Groceries', 600], ['Dining out', 250]]],
+  ['Transportation', [['Car payment', 500], ['Car insurance', 150], ['Fuel', 200], ['Car maintenance', 100]]],
+  ['Health', [['Health insurance', 500], ['Medical & dental', 150]]],
+  ['Family & lifestyle', [['Childcare', 1200], ['Clothing', 100], ['Subscriptions & entertainment', 100], ['Travel', 300], ['Gifts & donations', 100], ['Pet care', 100]]],
+];
+
+function openExpensePicker() {
+  // Without a range picked on the summary bar, expenses run from this month to the end of the project.
+  const now = new Date();
+  const start = clamp(selection?.start ?? (now.getFullYear() - BASE_YEAR) * 12 + now.getMonth(), rangeStart(), rangeEnd() - 1);
+  const end = clamp(selection?.end ?? rangeEnd(), start + 1, rangeEnd());
+  expensePicker.style.setProperty('--color', EXPENSE_COLORS[0]);
+  expensePicker.innerHTML = `
+    <form method="dialog">
+      <h2 id="expense-picker-title">Common expenses</h2>
+      <p class="hint">Tick the ones that apply and adjust the monthly amounts.</p>
+      <div class="picker-list">
+        ${COMMON_EXPENSES.map(([group, items]) => `<div class="pick-group">
+          <h3>${group}</h3>
+          <label class="pick-all-row"><input type="checkbox" class="pick-all"> Select all</label>
+          ${items.map(([name, amount]) => `<label class="pick-row">
+            <input type="checkbox" class="pick">
+            <span class="pick-name">${name}</span>
+            <span>$<input type="number" class="pick-amount" min="0" step="50" value="${amount}" aria-label="${name} per month">/mo</span>
+          </label>`).join('')}
+        </div>`).join('')}
+      </div>
+      <label class="prop">From <input type="month" class="start"></label>
+      <label class="prop">To <input type="month" class="end"></label>
+      <div class="prop-actions">
+        <button value="add" class="add" disabled>Add selected</button>
+        <button value="cancel">Cancel</button>
+      </div>
+    </form>`;
+
+  const q = (sel) => expensePicker.querySelector(sel);
+  const startInput = q('.start');
+  const endInput = q('.end');
+  for (const input of [startInput, endInput]) {
+    input.min = monthValue(rangeStart());
+    input.max = monthValue(rangeEnd() - 1);
+  }
+  startInput.value = monthValue(start);
+  endInput.value = monthValue(end - 1);
+  const addButton = q('.add');
+  q('form').addEventListener('change', (e) => {
+    const group = e.target.closest('.pick-group');
+    if (group) {
+      const all = group.querySelector('.pick-all');
+      const picks = [...group.querySelectorAll('.pick')];
+      if (e.target === all) for (const pick of picks) pick.checked = all.checked;
+      const checked = picks.filter((pick) => pick.checked).length;
+      all.checked = checked === picks.length;
+      all.indeterminate = checked > 0 && checked < picks.length;
+    }
+    addButton.disabled = !q('.pick:checked');
+  });
+
+  addButton.addEventListener('click', () => {
+    const from = clamp(parseMonthValue(startInput.value) ?? start, rangeStart(), rangeEnd() - 1);
+    const last = parseMonthValue(endInput.value);
+    const to = clamp(last === null ? end : last + 1, from + 1, rangeEnd());
+    for (const row of expensePicker.querySelectorAll('.pick-row')) {
+      if (!row.querySelector('.pick').checked) continue;
+      const monthly = Math.max(0, Math.round(Number(row.querySelector('.pick-amount').value) || 0));
+      newSource('expense', from, to, { name: row.querySelector('.pick-name').textContent, monthly });
+    }
+    selection = null;
+    setDrawer(false);
+    render();
+  });
+  expensePicker.showModal();
+}
+
 function renderSourceForm(s) {
   const type = INVESTMENT_TYPES[s.investmentType];
   const isInvestment = s.kind === 'investment';
@@ -2342,6 +2477,7 @@ document.addEventListener('pointerdown', (e) => {
 });
 projectName.addEventListener('click', () => setDrawer(true));
 saveNote.addEventListener('click', () => saveInfo.showModal());
+$('common-expenses').addEventListener('click', openExpensePicker);
 document.addEventListener('click', (e) => {
   const key = e.target.closest('.info-btn')?.dataset.info;
   if (key === 'tax') taxInfo.showModal();
@@ -2362,7 +2498,7 @@ $('import-file').addEventListener('change', (e) => {
   if (file) importProject(file);
 });
 document.addEventListener('keydown', (e) => {
-  const popup = [taxInfo, investmentInfo, confirmDialog].find((d) => d.open);
+  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker].find((d) => d.open);
   if (e.key === 'Escape' && popup) {
     // Left to itself, the browser may close the dialog or drawer underneath instead of the popup.
     e.preventDefault();
