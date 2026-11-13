@@ -54,8 +54,24 @@ header {
   cursor: pointer;
 }
 #save-note:hover { text-decoration: underline dotted; }
+#save-note.blink { animation: blink 1.3s step-end infinite; }
+/* 1s on, then 0.3s off (76.92% of 1.3s = 1s). */
+@keyframes blink { 0% { opacity: 1; } 76.92% { opacity: 0; } }
 
-#save-info, #tax-info, #investment-info {
+#save-note-ack {
+  padding: 1px 6px;
+  background: #263150;
+  border: 1px solid #3d4a6b;
+  border-radius: 4px;
+  color: #e6e9ef;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#save-note-ack:hover { background: #313d61; border-color: #4e5d84; }
+
+#save-info, #tax-info, #investment-info, #inflation-dialog {
   width: 400px;
   padding: 16px;
   background: #171e2e;
@@ -67,8 +83,8 @@ header {
   font-size: 13px;
   line-height: 1.5;
 }
-#save-info::backdrop, #tax-info::backdrop, #investment-info::backdrop { background: rgba(0, 0, 0, 0.45); }
-#save-info h2, #tax-info h2, #investment-info h2 {
+#save-info::backdrop, #tax-info::backdrop, #investment-info::backdrop, #inflation-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+#save-info h2, #tax-info h2, #investment-info h2, #inflation-dialog h2 {
   margin: 0 0 8px;
   font-size: 13px;
   color: #f5c542;
@@ -78,6 +94,8 @@ header {
 #save-info p, #save-info ul, #tax-info p, #tax-info ul, #investment-info p, #investment-info ul { margin: 0 0 8px; }
 #save-info ul, #tax-info ul, #investment-info ul { padding-left: 20px; }
 #investment-info .note { font-size: 11px; color: #8a93a6; }
+#inflation-dialog p { margin: 0 0 12px; }
+#inflation-dialog .prop { margin-bottom: 12px; }
 
 .info-btn {
   padding: 0;
@@ -248,15 +266,31 @@ header {
 }
 .head {
   width: max-content;
+  padding-left: 20px;
   border-right-width: 4px;
   border-left-color: color-mix(in srgb, var(--color) 45%, black);
   gap: 1px;
 }
 .tail {
   width: max-content;
+  padding-right: 20px;
   border-left-width: 4px;
   border-right-color: color-mix(in srgb, var(--color) 45%, black);
 }
+.edge-jump {
+  position: absolute;
+  top: 1px;
+  padding: 0 2px;
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.edge-jump:hover { color: var(--color); }
+.head .edge-jump { left: 7px; }
+.tail .edge-jump { right: 7px; }
 
 .row { display: flex; align-items: center; gap: 4px; }
 .row .date { flex: none; }
@@ -285,9 +319,7 @@ header {
   border-bottom: 1px dashed #556079;
 }
 .head input.initial { width: 80px; border-bottom: 1px dashed #556079; }
-.head input.pct, .head input.growth, .head input.income-growth, .head input.tax-pct, .head input.match-pct { width: 30px; border-bottom: 1px dashed #556079; }
-.head input.growth, .head input.income-growth, .head input.tax-pct, .head input.match-pct { width: 48px; }
-.head input.pct { -moz-appearance: textfield; appearance: textfield; }
+.head input.pct, .head input.growth, .head input.income-growth, .head input.tax-pct, .head input.match-pct { width: 48px; border-bottom: 1px dashed #556079; }
 .head .tax-row { color: #f2a0a0; }
 .head .growth-row { color: #9adbb4; }
 
@@ -303,7 +335,6 @@ header {
 }
 .money-step button:hover { color: var(--color); }
 #source-dialog .money-step button { font-size: 9px; line-height: 11px; }
-.head input.pct::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .source.investment .head, .source.investment .tail { border-style: dashed; }
 .head input:focus { outline: 1px solid var(--color); }
 .head input[type="checkbox"] { accent-color: var(--color); cursor: pointer; }
@@ -687,6 +718,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     <div class="title">
       <button type="button" id="project-name" title="Projects" aria-controls="project-drawer" aria-expanded="false"></button>
       <button type="button" id="save-note" title="Why export?" hidden>Saved to this browser &mdash; export to keep it safe &#9432;</button>
+      <button type="button" id="save-note-ack" hidden>Got it, stop blinking!</button>
     </div>
     <div class="controls">
       <label class="birth">Inflation
@@ -854,6 +886,20 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     </form>
   </dialog>
 
+  <dialog id="inflation-dialog" aria-labelledby="inflation-dialog-title">
+    <form method="dialog">
+      <h2 id="inflation-dialog-title">Inflation starting year</h2>
+      <p>Expenses grow by the inflation rate each year after this year.</p>
+      <label class="prop">Starting year
+        <input type="number" id="inflation-dialog-year" min="2000" max="2100" step="1" required autofocus>
+      </label>
+      <div class="prop-actions">
+        <button value="set">Set</button>
+        <button value="cancel" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="drawer-backdrop"></div>
   <aside id="project-drawer" aria-label="Projects">
     <span class="version">v1.3<br><span class="refresh-hint">Ctrl+F5 on browser to refresh to latest version.</span></span>
@@ -867,6 +913,9 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       <h2>Project settings</h2>
       <label class="prop">Year of birth
         <input type="number" id="birth-year" min="1900" max="2080" step="1" placeholder="e.g. 1985">
+      </label>
+      <label class="prop">Planned Maximum Age of User
+        <input type="number" id="death-age" min="1" max="120" step="1">
       </label>
       <div class="prop">Year range
         <span>
@@ -908,15 +957,20 @@ const INVESTMENT_COLORS = ['#a87ef5'];
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const STORAGE_KEY = 'income-timeline-state';
 const PROJECTS_KEY = 'income-timeline-projects';
+const SAVE_NOTE_ACK_KEY = 'income-timeline-save-note-acks';
+const BLINK_SNOOZE_MS = 24 * 60 * 60 * 1000;
 const PROJECT_NAME_MAX = 60;
 const DEFAULT_INITIAL = 100000;
 const DEFAULT_WITHDRAW_PCT = 4;
 const DEFAULT_GROWTH_PCT = 5;
+const DEFAULT_DEATH_AGE = 90;
+
+const nextYear = () => new Date().getFullYear() + 1;
 
 const defaultState = () => ({
   baseYear: BASE_YEAR,
-  viewStart: 0, viewEnd: MAX_MONTH, sources: [], nextId: 1, birthYear: null,
-  inflationRate: 0, inflationYear: BASE_YEAR, startYear: BASE_YEAR, endYear: END_YEAR,
+  viewStart: 0, viewEnd: MAX_MONTH, sources: [], nextId: 1, birthYear: null, deathAge: DEFAULT_DEATH_AGE,
+  inflationRate: 0, inflationYear: nextYear(), inflationYearSet: false, startYear: BASE_YEAR, endYear: END_YEAR,
 });
 const state = defaultState();
 const projects = { list: [], activeId: null, nextId: 1 };
@@ -954,10 +1008,12 @@ const ctxConvert = $('ctx-convert');
 const projectName = $('project-name');
 const projectList = $('project-list');
 const saveNote = $('save-note');
+const saveNoteAck = $('save-note-ack');
 const saveInfo = $('save-info');
 const taxInfo = $('tax-info');
 const investmentInfo = $('investment-info');
 const confirmDialog = $('confirm-dialog');
+const inflationDialog = $('inflation-dialog');
 const expensePicker = $('expense-picker');
 
 // Investment-pane nodes only track a balance; the summary chart counts just income and expense.
@@ -1085,9 +1141,10 @@ const NO_BIRTH_YEAR = 'no year of birth set';
 const noBirthYearTag = (text = NO_BIRTH_YEAR) => Object.assign(document.createElement('span'), { className: 'no-birth', textContent: text });
 
 const validBirthYear = (y) => (Number.isInteger(y) && y >= 1900 && y <= 2080 ? y : null);
+const validDeathAge = (a) => (Number.isInteger(a) && a >= 1 && a <= 120 ? a : DEFAULT_DEATH_AGE);
 const validTaxRate = (r) => (Number.isInteger(r) ? clamp(r, 0, 100) : 0);
 const validInflationRate = (r) => (Number.isFinite(r) ? clamp(r, 0, 100) : 0);
-const validInflationYear = (y) => (Number.isInteger(y) && y >= BASE_YEAR && y <= END_YEAR ? y : BASE_YEAR);
+const validInflationYear = (y) => (Number.isInteger(y) && y >= BASE_YEAR && y <= END_YEAR ? y : nextYear());
 const validNodeWidth = (w, min) => (Number.isFinite(w) ? clamp(Math.round(w), min, MAX_NODE_W) : min);
 
 // ---------- Persistence ----------
@@ -1124,8 +1181,28 @@ let savedSnapshot = null;
 // Zoom/pan is saved too, but isn't worth an export reminder.
 const dataSnapshot = () => JSON.stringify({ ...state, viewStart: 0, viewEnd: 0 });
 
+// When each project's blinking was last stopped, by project id; exporting clears it.
+const storedAcks = readJSON(SAVE_NOTE_ACK_KEY);
+const saveNoteAcks = storedAcks && typeof storedAcks === 'object' ? storedAcks : {};
+let blinkTimer;
+
+function storeSaveNoteAck(id, time) {
+  if (time) saveNoteAcks[id] = time;
+  else delete saveNoteAcks[id];
+  writeJSON(SAVE_NOTE_ACK_KEY, saveNoteAcks);
+}
+
 function renderSaveNote() {
-  saveNote.hidden = !unexported.has(projects.activeId);
+  const show = unexported.has(projects.activeId);
+  const ackedAt = saveNoteAcks[projects.activeId];
+  const snoozeLeft = Number.isFinite(ackedAt) ? ackedAt + BLINK_SNOOZE_MS - Date.now() : 0;
+  const blink = show && snoozeLeft <= 0;
+  saveNote.hidden = !show;
+  saveNote.classList.toggle('blink', blink);
+  saveNoteAck.hidden = !blink;
+  clearTimeout(blinkTimer);
+  // Capped so a clock change can't push the delay past setTimeout's limit.
+  if (show && !blink) blinkTimer = setTimeout(renderSaveNote, Math.min(snoozeLeft, BLINK_SNOOZE_MS));
 }
 
 function saveState() {
@@ -1151,6 +1228,7 @@ function loadState(saved = readJSON(projectKey(projects.activeId))) {
 
   for (const s of state.sources) sourceEls.set(s.id, createSourceEl(s));
   $('birth-year').value = state.birthYear ?? '';
+  $('death-age').value = state.deathAge;
   $('start-year').value = state.startYear;
   $('end-year').value = state.endYear;
   $('inflation-rate').value = state.inflationRate;
@@ -1198,8 +1276,13 @@ function applySavedState(saved) {
   const maxId = state.sources.reduce((max, s) => Math.max(max, s.id), 0);
   state.nextId = Math.max(maxId + 1, isInt(saved.nextId) ? saved.nextId : 1);
   state.birthYear = validBirthYear(saved.birthYear);
+  state.deathAge = validDeathAge(saved.deathAge);
   state.inflationRate = validInflationRate(saved.inflationRate);
   state.inflationYear = validInflationYear(saved.inflationYear);
+  // Saves from before this flag existed defaulted to BASE_YEAR, so any other year was chosen.
+  state.inflationYearSet = typeof saved.inflationYearSet === 'boolean'
+    ? saved.inflationYearSet
+    : Number.isInteger(saved.inflationYear) && saved.inflationYear !== BASE_YEAR;
   // A legacy save showing the whole old span gets the whole new span (the defaults) instead.
   const legacyFullRange = !isInt(saved.baseYear)
     && saved.startYear === LEGACY_BASE_YEAR && saved.endYear === LEGACY_END_YEAR;
@@ -1280,6 +1363,7 @@ function exportProject() {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url));
   unexported.delete(projects.activeId);
+  storeSaveNoteAck(projects.activeId, null);
   renderSaveNote();
 }
 
@@ -1306,6 +1390,7 @@ async function deleteProject(p) {
   if (!(await confirmDelete('Delete project', message, '#4e9af1'))) return;
   projects.list = projects.list.filter((x) => x !== p);
   removeStored(projectKey(p.id));
+  storeSaveNoteAck(p.id, null);
   if (!projects.list.length) addProject();
   if (p.id === projects.activeId) {
     selectProject(projects.list[0].id);
@@ -1653,7 +1738,7 @@ function createSourceEl(s) {
   const isPot = s.investment || isInvestment;
   const amountRows = isPot
     ? `<div class="row">$<input type="text" inputmode="numeric" class="initial" title="Initial amount">${MONEY_STEPPER}</div>
-       ${s.investment ? '<div class="row"><input type="number" class="pct" min="0" max="100" step="0.5" title="Yearly withdrawal % of current balance">% draw/yr</div>' : ''}
+       ${s.investment ? '<div class="row"><input type="number" class="pct" min="0" max="100" step="0.1" title="Yearly withdrawal % of current balance">% draw/yr</div>' : ''}
        ${isInvestment ? `<div class="row">$<input type="text" inputmode="numeric" class="contribution" title="Monthly contribution">${MONEY_STEPPER}/mo${type.match ? ' <input type="number" class="match-pct" min="0" max="200" step="1" title="Employer match, % of your contribution">% match' : ''}</div>` : ''}
        <div class="row growth-row"><input type="number" class="growth" min="-100" max="100" step="0.1" title="Yearly growth %">% growth/yr</div>
        ${isInvestment && type.taxLabel ? `<div class="row tax-row"><input type="number" class="tax-pct" min="0" max="100" step="0.1" title="${type.taxLabel}">% ${type.taxLabel.toLowerCase()}</div>` : ''}`
@@ -1662,6 +1747,7 @@ function createSourceEl(s) {
   root.innerHTML = `
     <div class="head">
       <div class="resize-grip" title="Drag to resize"></div>
+      <button type="button" class="edge-jump to-next-year" title="Move start to January of next year" aria-label="Move start to January of next year">&larr;</button>
       <div class="row">
         <input type="checkbox" class="active" title="Active">
         <input type="text" class="name" maxlength="40">
@@ -1674,6 +1760,7 @@ function createSourceEl(s) {
     </div>
     <div class="tail">
       <div class="resize-grip" title="Drag to resize"></div>
+      <button type="button" class="edge-jump to-death" title="Move end to planned maximum age of user" aria-label="Move end to planned maximum age of user">&rarr;</button>
       <div class="total"></div>
       ${s.investment ? '<div class="remaining"></div>' : ''}
       ${isInvestment ? '<div class="after-tax"></div>' : ''}
@@ -1706,6 +1793,8 @@ function createSourceEl(s) {
     const message = `Delete "${s.name || '(unnamed)'}"? This cannot be undone.`;
     if (await confirmDelete(`Delete ${KINDS[s.kind].label.toLowerCase()}`, message, s.color)) removeSource(s.id);
   });
+  q('.to-death').addEventListener('click', (e) => moveEndToDeathAge(s, e.currentTarget));
+  q('.to-next-year').addEventListener('click', (e) => moveStartToNextYear(s, e.currentTarget));
   if (isPot) {
     bindMoneyInput(q('.initial'), 1000, () => s.initial, (v) => { s.initial = v; });
     q('.growth').value = s.growthPct;
@@ -1808,6 +1897,35 @@ function bindMoneyInput(input, step, get, set) {
   });
   input.parentElement.querySelector('.money-up').addEventListener('click', () => nudge(MONEY_FINE_STEP));
   input.parentElement.querySelector('.money-down').addEventListener('click', () => nudge(-MONEY_FINE_STEP));
+}
+
+function moveEndToDeathAge(s, anchor) {
+  if (state.birthYear === null) {
+    showNotice(anchor, 'Set a year of birth in Project settings first.');
+    return;
+  }
+  const deathYear = state.birthYear + state.deathAge;
+  // Runs through December of that year.
+  const end = (deathYear - BASE_YEAR + 1) * 12;
+  if (end <= s.start) {
+    showNotice(anchor, `Age ${state.deathAge} (${deathYear}) is before this starts.`);
+    return;
+  }
+  if (end > rangeEnd()) showNotice(anchor, `Age ${state.deathAge} (${deathYear}) is past the year range, so this ends at the range end.`);
+  s.end = clamp(end, s.start + 1, rangeEnd());
+  render();
+}
+
+function moveStartToNextYear(s, anchor) {
+  const year = nextYear();
+  const start = (year - BASE_YEAR) * 12;
+  if (start >= s.end) {
+    showNotice(anchor, `January ${year} is after this ends.`);
+    return;
+  }
+  if (start < rangeStart()) showNotice(anchor, `January ${year} is before the year range, so this starts at the range start.`);
+  s.start = clamp(start, rangeStart(), s.end - 1);
+  render();
 }
 
 function enableEdgeDrag(handle, s, edge) {
@@ -2106,7 +2224,7 @@ function renderSourceForm(s) {
     : '';
   const investmentRows = s.kind !== 'expense'
     ? `<label class="prop invest-row">Initial amount <span>$<input type="text" inputmode="numeric" class="initial">${MONEY_STEPPER}</span></label>
-      ${s.kind === 'income' ? '<label class="prop invest-row">Withdrawal / yr <span><input type="number" class="pct" min="0" max="100" step="0.5">%</span></label>' : ''}
+      ${s.kind === 'income' ? '<label class="prop invest-row">Withdrawal / yr <span><input type="number" class="pct" min="0" max="100" step="0.1">%</span></label>' : ''}
       ${isInvestment ? `<label class="prop invest-row">Monthly contribution <span>$<input type="text" inputmode="numeric" class="contribution">${MONEY_STEPPER}</span></label>` : ''}
       ${isInvestment && type.match ? '<label class="prop invest-row">Employer match <span><input type="number" class="match-pct" min="0" max="200" step="1">%</span></label>' : ''}
       <label class="prop invest-row">Growth / yr <span><input type="number" class="growth" min="-100" max="100" step="0.1">%</span></label>
@@ -2440,6 +2558,11 @@ $('birth-year').addEventListener('input', (e) => {
   state.birthYear = validBirthYear(Number.parseInt(e.target.value, 10));
   render();
 });
+$('death-age').addEventListener('input', (e) => {
+  state.deathAge = validDeathAge(Number.parseInt(e.target.value, 10));
+  saveState();
+});
+$('death-age').addEventListener('change', (e) => { e.target.value = state.deathAge; });
 
 // Runs on change, not input, so half-typed years don't reshape the timeline.
 function changeYearRange(edge, value) {
@@ -2463,8 +2586,22 @@ $('inflation-rate').addEventListener('input', (e) => {
   state.inflationRate = validInflationRate(Number.parseFloat(e.target.value));
   render();
 });
+$('inflation-rate').addEventListener('change', () => {
+  if (state.inflationRate === 0 || state.inflationYearSet) return;
+  $('inflation-dialog-year').value = state.inflationYear;
+  inflationDialog.returnValue = '';
+  inflationDialog.showModal();
+});
 $('inflation-year').addEventListener('input', (e) => {
   state.inflationYear = validInflationYear(Number.parseInt(e.target.value, 10));
+  state.inflationYearSet = true;
+  render();
+});
+inflationDialog.addEventListener('close', () => {
+  if (inflationDialog.returnValue !== 'set') return;
+  state.inflationYear = validInflationYear(Number.parseInt($('inflation-dialog-year').value, 10));
+  state.inflationYearSet = true;
+  $('inflation-year').value = state.inflationYear;
   render();
 });
 ctxConvert.addEventListener('click', () => {
@@ -2477,6 +2614,10 @@ document.addEventListener('pointerdown', (e) => {
 });
 projectName.addEventListener('click', () => setDrawer(true));
 saveNote.addEventListener('click', () => saveInfo.showModal());
+saveNoteAck.addEventListener('click', () => {
+  storeSaveNoteAck(projects.activeId, Date.now());
+  renderSaveNote();
+});
 $('common-expenses').addEventListener('click', openExpensePicker);
 document.addEventListener('click', (e) => {
   const key = e.target.closest('.info-btn')?.dataset.info;
@@ -2498,7 +2639,7 @@ $('import-file').addEventListener('change', (e) => {
   if (file) importProject(file);
 });
 document.addEventListener('keydown', (e) => {
-  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker].find((d) => d.open);
+  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker, inflationDialog].find((d) => d.open);
   if (e.key === 'Escape' && popup) {
     // Left to itself, the browser may close the dialog or drawer underneath instead of the popup.
     e.preventDefault();
@@ -2511,6 +2652,8 @@ document.addEventListener('keydown', (e) => {
   }
   // Values are already applied on input, so Enter only needs to drop focus (dialogs submit instead).
   if (e.key === 'Enter' && e.target.matches('input:not([type="checkbox"])') && !e.target.closest('dialog')) {
+    // Otherwise the same Enter can submit a dialog that the blur's change handler opens.
+    e.preventDefault();
     e.target.blur();
   }
 });
