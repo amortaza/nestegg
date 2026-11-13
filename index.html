@@ -71,7 +71,7 @@ header {
 }
 #save-note-ack:hover { background: #313d61; border-color: #4e5d84; }
 
-#save-info, #tax-info, #investment-info, #inflation-dialog {
+#save-info, #tax-info, #investment-info, #inflation-dialog, #birth-year-dialog, #update-dialog {
   width: 400px;
   padding: 16px;
   background: #171e2e;
@@ -83,19 +83,19 @@ header {
   font-size: 13px;
   line-height: 1.5;
 }
-#save-info::backdrop, #tax-info::backdrop, #investment-info::backdrop, #inflation-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
-#save-info h2, #tax-info h2, #investment-info h2, #inflation-dialog h2 {
+#save-info::backdrop, #tax-info::backdrop, #investment-info::backdrop, #inflation-dialog::backdrop, #birth-year-dialog::backdrop, #update-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+#save-info h2, #tax-info h2, #investment-info h2, #inflation-dialog h2, #birth-year-dialog h2, #update-dialog h2 {
   margin: 0 0 8px;
   font-size: 13px;
   color: #f5c542;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-#save-info p, #save-info ul, #tax-info p, #tax-info ul, #investment-info p, #investment-info ul { margin: 0 0 8px; }
+#save-info p, #save-info ul, #tax-info p, #tax-info ul, #investment-info p, #investment-info ul, #update-dialog p { margin: 0 0 8px; }
 #save-info ul, #tax-info ul, #investment-info ul { padding-left: 20px; }
 #investment-info .note { font-size: 11px; color: #8a93a6; }
-#inflation-dialog p { margin: 0 0 12px; }
-#inflation-dialog .prop { margin-bottom: 12px; }
+#inflation-dialog p, #birth-year-dialog p { margin: 0 0 12px; }
+#inflation-dialog .prop, #birth-year-dialog .prop { margin-bottom: 12px; }
 
 .info-btn {
   padding: 0;
@@ -531,7 +531,6 @@ body.drawer-open #drawer-backdrop { opacity: 1; pointer-events: auto; }
 body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
 .version { margin-bottom: 6px; font-size: 11px; color: #f5c542; }
-.refresh-hint { color: #8a93a6; }
 
 .drawer-head {
   display: flex;
@@ -900,9 +899,31 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     </form>
   </dialog>
 
+  <dialog id="birth-year-dialog" aria-labelledby="birth-year-dialog-title">
+    <form method="dialog">
+      <h2 id="birth-year-dialog-title">Year of birth</h2>
+      <p>Used to show ages on the timeline and to place the planned maximum age.</p>
+      <label class="prop">Year of birth
+        <input type="number" id="birth-year-dialog-year" min="1900" max="2080" step="1" placeholder="e.g. 1985" required autofocus>
+      </label>
+      <div class="prop-actions">
+        <button value="set">Set</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="update-dialog" aria-labelledby="update-dialog-title">
+    <form method="dialog">
+      <h2 id="update-dialog-title">New version available</h2>
+      <p>Current version: <strong id="update-current"></strong><br>Updated version: <strong id="update-latest"></strong></p>
+      <p>Press <strong>Ctrl+F5</strong> to load the newest version. You may need to press it more than once.</p>
+      <div class="prop-actions"><button>Got it</button></div>
+    </form>
+  </dialog>
+
   <div id="drawer-backdrop"></div>
   <aside id="project-drawer" aria-label="Projects">
-    <span class="version">v1.3<br><span class="refresh-hint">Ctrl+F5 on browser to refresh to latest version.</span></span>
+    <span class="version" id="app-version"></span>
     <div class="drawer-head">
       <h2>Projects</h2>
       <button type="button" id="drawer-close" title="Close">&times;</button>
@@ -937,6 +958,10 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
   <script>
 'use strict';
 
+const APP_VERSION = 'v1.4';
+const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/amortaza/nestegg/main/latest';
+const UPDATE_CHECK_MS = 60 * 60 * 1000;
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const BASE_YEAR = 2000;
 const END_YEAR = 2100;
@@ -966,6 +991,9 @@ const DEFAULT_GROWTH_PCT = 5;
 const DEFAULT_DEATH_AGE = 90;
 
 const nextYear = () => new Date().getFullYear() + 1;
+const yearStart = (year) => (year - BASE_YEAR) * 12;
+// Exclusive end month, so the year is covered through December.
+const yearEnd = (year) => (year - BASE_YEAR + 1) * 12;
 
 const defaultState = () => ({
   baseYear: BASE_YEAR,
@@ -1014,6 +1042,8 @@ const taxInfo = $('tax-info');
 const investmentInfo = $('investment-info');
 const confirmDialog = $('confirm-dialog');
 const inflationDialog = $('inflation-dialog');
+const birthYearDialog = $('birth-year-dialog');
+const updateDialog = $('update-dialog');
 const expensePicker = $('expense-picker');
 
 // Investment-pane nodes only track a balance; the summary chart counts just income and expense.
@@ -1464,9 +1494,19 @@ function renderProjects() {
   }));
 }
 
+// A project made with "+ New project"; closing the drawer then asks for its year of birth.
+let askBirthYearFor = null;
+
 function setDrawer(open) {
   document.body.classList.toggle('drawer-open', open);
   projectName.setAttribute('aria-expanded', String(open));
+  if (open) return;
+  if (askBirthYearFor === projects.activeId && state.birthYear === null && !birthYearDialog.open) {
+    $('birth-year-dialog-year').value = '';
+    birthYearDialog.returnValue = '';
+    birthYearDialog.showModal();
+  }
+  askBirthYearFor = null;
 }
 
 // ---------- View (zoom / pan) ----------
@@ -1701,8 +1741,14 @@ function newSource(kind, start, end, fields = {}) {
 }
 
 function addSource(kind, month) {
-  const start = clamp(selection?.start ?? month, rangeStart(), rangeEnd() - 1);
-  const end = clamp(selection?.end ?? start + 1, start + 1, rangeEnd());
+  // New expenses default to January next year through the year of the planned maximum age,
+  // or through the end of the year range when that age can't be placed without a year of birth.
+  const isExpense = kind === 'expense';
+  const start = clamp(selection?.start ?? (isExpense ? yearStart(nextYear()) : month), rangeStart(), rangeEnd() - 1);
+  const maxYear = maxAgeYear();
+  let defaultEnd = start + 1;
+  if (isExpense) defaultEnd = maxYear === null ? rangeEnd() : yearEnd(maxYear);
+  const end = clamp(selection?.end ?? defaultEnd, start + 1, rangeEnd());
   selection = null;
   const s = newSource(kind, start, end);
   render();
@@ -1899,14 +1945,15 @@ function bindMoneyInput(input, step, get, set) {
   input.parentElement.querySelector('.money-down').addEventListener('click', () => nudge(-MONEY_FINE_STEP));
 }
 
+const maxAgeYear = () => (state.birthYear === null ? null : state.birthYear + state.deathAge);
+
 function moveEndToDeathAge(s, anchor) {
-  if (state.birthYear === null) {
+  const deathYear = maxAgeYear();
+  if (deathYear === null) {
     showNotice(anchor, 'Set a year of birth in Project settings first.');
     return;
   }
-  const deathYear = state.birthYear + state.deathAge;
-  // Runs through December of that year.
-  const end = (deathYear - BASE_YEAR + 1) * 12;
+  const end = yearEnd(deathYear);
   if (end <= s.start) {
     showNotice(anchor, `Age ${state.deathAge} (${deathYear}) is before this starts.`);
     return;
@@ -1918,7 +1965,7 @@ function moveEndToDeathAge(s, anchor) {
 
 function moveStartToNextYear(s, anchor) {
   const year = nextYear();
-  const start = (year - BASE_YEAR) * 12;
+  const start = yearStart(year);
   if (start >= s.end) {
     showNotice(anchor, `January ${year} is after this ends.`);
     return;
@@ -2245,6 +2292,7 @@ function renderSourceForm(s) {
       <div class="prop"><span>Tax rate ${TAX_INFO_BUTTON}</span><span><input type="number" class="tax-pct" min="0" max="100" step="0.1" aria-label="Tax rate">%</span></div>` : ''}
       <label class="prop">Start <input type="month" class="start"></label>
       <label class="prop">End <input type="month" class="end"></label>
+      ${s.kind === 'expense' && state.birthYear === null ? '<p class="hint">Set a year of birth in Project settings to end this at the planned maximum age.</p>' : ''}
       <div class="prop-actions">
         <button type="submit">Done</button>
         <button type="button" class="cancel">Cancel</button>
@@ -2604,6 +2652,14 @@ inflationDialog.addEventListener('close', () => {
   $('inflation-year').value = state.inflationYear;
   render();
 });
+// Year of birth is required, so the popup can only be closed with Set.
+birthYearDialog.addEventListener('cancel', (e) => e.preventDefault());
+birthYearDialog.addEventListener('close', () => {
+  if (birthYearDialog.returnValue !== 'set') return;
+  state.birthYear = validBirthYear(Number.parseInt($('birth-year-dialog-year').value, 10));
+  $('birth-year').value = state.birthYear ?? '';
+  render();
+});
 ctxConvert.addEventListener('click', () => {
   if (menuSource) toggleInvestment(menuSource);
   closeContextMenu();
@@ -2628,6 +2684,7 @@ $('drawer-backdrop').addEventListener('click', () => setDrawer(false));
 $('drawer-close').addEventListener('click', () => setDrawer(false));
 $('project-new').addEventListener('click', () => {
   const p = createProject();
+  askBirthYearFor = p.id;
   startRename(projectList.lastElementChild, p);
 });
 $('project-clone').addEventListener('click', cloneProject);
@@ -2639,12 +2696,14 @@ $('import-file').addEventListener('change', (e) => {
   if (file) importProject(file);
 });
 document.addEventListener('keydown', (e) => {
-  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker, inflationDialog].find((d) => d.open);
+  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker, inflationDialog, updateDialog].find((d) => d.open);
   if (e.key === 'Escape' && popup) {
     // Left to itself, the browser may close the dialog or drawer underneath instead of the popup.
     e.preventDefault();
     popup.close();
   } else if (e.key === 'Escape') {
+    // Otherwise the same Escape can cancel the birth-year popup that closing the drawer opens.
+    e.preventDefault();
     closeContextMenu();
     setDrawer(false);
     if (sourceDialog.open) sourceDialog.close('cancel');
@@ -2659,10 +2718,28 @@ document.addEventListener('keydown', (e) => {
 });
 window.addEventListener('resize', render);
 
+async function checkForUpdate() {
+  let latest;
+  try {
+    const res = await fetch(LATEST_VERSION_URL, { cache: 'no-store' });
+    if (!res.ok) return;
+    latest = (await res.text()).trim().slice(0, 40);
+  } catch {
+    return; // Offline or blocked; the next hourly check tries again.
+  }
+  if (!latest || latest === APP_VERSION || updateDialog.open) return;
+  $('update-current').textContent = APP_VERSION;
+  $('update-latest').textContent = latest;
+  updateDialog.showModal();
+}
+
+$('app-version').textContent = APP_VERSION;
 loadProjects();
 loadState();
 renderProjects();
 render();
+checkForUpdate();
+setInterval(checkForUpdate, UPDATE_CHECK_MS);
 </script>
 </body>
 </html>
