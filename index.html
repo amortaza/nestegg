@@ -71,6 +71,35 @@ header {
 }
 #save-note-ack:hover { background: #313d61; border-color: #4e5d84; }
 
+#save-error {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 20px 10px;
+  padding: 8px 12px;
+  background: #3a1a1a;
+  border: 1px solid #e05252;
+  border-radius: 6px;
+  color: #f2c4c4;
+  font-size: 13px;
+}
+#save-error[hidden] { display: none; }
+#save-error strong { color: #ff8a8a; }
+#save-error span { flex: 1 1 280px; }
+#save-error button {
+  padding: 4px 10px;
+  background: #4a2020;
+  border: 1px solid #e05252;
+  border-radius: 4px;
+  color: #f6d6d6;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+#save-error button:hover { background: #5a2626; }
+
 #save-info, #tax-info, #investment-info, #inflation-dialog, #birth-year-dialog, #update-dialog {
   width: 400px;
   padding: 16px;
@@ -93,7 +122,37 @@ header {
 }
 #save-info p, #save-info ul, #tax-info p, #tax-info ul, #investment-info p, #investment-info ul, #update-dialog p { margin: 0 0 8px; }
 #save-info ul, #tax-info ul, #investment-info ul { padding-left: 20px; }
-#investment-info .note { font-size: 11px; color: #8a93a6; }
+#investment-info {
+  width: min(540px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#investment-info h2:focus { outline: none; }
+#investment-info h3 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  color: #e6e9ef;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#investment-info li { margin-bottom: 4px; }
+#investment-info li ul { margin: 4px 0 0; }
+#investment-info .lead { color: #c9cfdb; }
+#investment-info .app-note {
+  margin: 12px 0 8px;
+  padding: 2px 10px 4px;
+  background: rgba(245, 197, 66, 0.08);
+  border-left: 3px solid #f5c542;
+  border-radius: 3px;
+}
+#investment-info .app-note h3 { margin-top: 6px; color: #f5c542; }
+#investment-info .sources { font-size: 11px; color: #8a93a6; }
+#investment-info a { color: #7fb4f5; }
+#investment-info a:focus-visible, #investment-info button:focus-visible { outline: 2px solid #f5c542; outline-offset: 2px; }
+#investment-info .info-footer { margin-top: 12px; padding-top: 8px; border-top: 1px solid #3a4560; font-size: 11px; color: #8a93a6; }
+#investment-info .info-footer p { margin: 0 0 6px; }
 #inflation-dialog p, #birth-year-dialog p { margin: 0 0 12px; }
 #inflation-dialog .prop, #birth-year-dialog .prop { margin-bottom: 12px; }
 
@@ -194,6 +253,7 @@ header {
   pointer-events: none;
 }
 .bar-head .bar-label { position: static; }
+#unfunded-note { margin-right: 16px; color: #e26d6d; font-size: 12px; }
 .bar-head button {
   padding: 2px 8px;
   background: #232c40;
@@ -322,6 +382,15 @@ header {
 .head input.pct, .head input.growth, .head input.income-growth, .head input.tax-pct, .head input.match-pct { width: 48px; border-bottom: 1px dashed #556079; }
 .head .tax-row { color: #f2a0a0; }
 .head .growth-row { color: #9adbb4; }
+/* Zero width keeps a long list from widening the head; it fills the head's width instead. */
+.head .items-list {
+  width: 0;
+  min-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: #8a93a6;
+}
 
 .money-step { display: inline-flex; flex-direction: column; vertical-align: middle; }
 .money-step button {
@@ -336,6 +405,9 @@ header {
 .money-step button:hover { color: var(--color); }
 #source-dialog .money-step button { font-size: 9px; line-height: 11px; }
 .source.investment .head, .source.investment .tail { border-style: dashed; }
+.source.mirror .head, .source.mirror .tail { border-style: dotted; cursor: default; }
+.mirror-name { font-weight: 600; margin-right: 4px; }
+.mirror-note { font-size: 11px; color: #8a93a6; }
 .head input:focus { outline: 1px solid var(--color); }
 .head input[type="checkbox"] { accent-color: var(--color); cursor: pointer; }
 
@@ -350,7 +422,28 @@ header {
 }
 .delete:hover { color: #e26d6d; }
 
+.items-btn {
+  padding: 0 2px;
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.items-btn:hover { color: var(--color); }
+
 .date { color: #8a93a6; font-size: 11px; }
+button.date {
+  padding: 0;
+  background: none;
+  border: none;
+  color: #8a93a6;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+button.date:hover { color: var(--color); text-decoration: underline; }
 .total { font-weight: 600; }
 #sources-bar .total { color: #7ddc9f; }
 .remaining { font-size: 11px; }
@@ -454,6 +547,70 @@ header {
 #expense-picker .add { border-color: var(--color); }
 #expense-picker .add:disabled { opacity: 0.5; cursor: default; }
 
+#line-items-dialog {
+  width: 340px;
+  padding: 16px;
+  background: #331010;
+  color: #e6e9ef;
+  color-scheme: dark;
+  border: 1px solid var(--color);
+  border-top-width: 4px;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+#line-items-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+#line-items-dialog form { display: flex; flex-direction: column; gap: 8px; }
+#line-items-dialog h2 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.line-items-editor { display: flex; flex-direction: column; gap: 8px; }
+.line-items-editor .line-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.line-items-editor li { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.line-items-editor input {
+  padding: 2px 6px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+}
+.line-items-editor input:focus { outline: 1px solid var(--color); }
+.line-items-editor .item-active { margin: 0; padding: 0; accent-color: var(--color); cursor: pointer; }
+.line-items-editor li.inactive .item-label, .line-items-editor li.inactive .item-amount { opacity: 0.4; }
+.line-items-editor .item-label { flex: 1; min-width: 0; }
+.line-items-editor .item-amount { width: 80px; margin: 0 2px; }
+.line-items-editor .money-step button { font-size: 9px; line-height: 11px; }
+.line-items-editor .add-item {
+  align-self: flex-start;
+  padding: 4px 10px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.line-items-editor .add-item:hover { background: #2d3852; }
+.line-items-editor .items-total { font-size: 13px; font-weight: 600; }
+#line-items-dialog .prop-actions button { border-color: var(--color); }
+#source-dialog .line-items-section summary { font-size: 13px; color: #8a93a6; cursor: pointer; }
+#source-dialog .line-items-section summary:hover { color: #e6e9ef; }
+#source-dialog .line-items-section[open] summary { margin-bottom: 8px; }
+
 #confirm-dialog {
   width: 320px;
   padding: 16px;
@@ -476,6 +633,47 @@ header {
 #confirm-dialog p { margin: 0 0 12px; line-height: 1.5; }
 #confirm-dialog .danger { border-color: #e05252; color: #f2a0a0; }
 #confirm-dialog .danger:hover { background: #3a1a1a; }
+
+#dates-dialog {
+  width: 340px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--color) 12%, #171e2e);
+  color: #e6e9ef;
+  color-scheme: dark;
+  border: 1px solid var(--color);
+  border-top-width: 4px;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+}
+#dates-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+#dates-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#dates-dialog .dates-grid {
+  display: grid;
+  grid-template-columns: auto 1fr 64px;
+  gap: 6px 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+#dates-dialog .col-head { font-size: 11px; color: #8a93a6; }
+#dates-dialog input {
+  padding: 4px 6px;
+  background: #232c40;
+  color: #e6e9ef;
+  border: 1px solid #3a4560;
+  border-radius: 4px;
+  font: inherit;
+}
+#dates-dialog input:focus { outline: 1px solid var(--color); }
+#dates-dialog input:disabled { opacity: 0.4; }
+#dates-dialog .hint { margin: 0 0 8px; font-size: 11px; color: #8a93a6; }
+#dates-dialog .prop-actions button[value="set"] { border-color: var(--color); }
 #source-dialog .type-option { display: flex; align-items: center; gap: 8px; }
 #source-dialog .pick-type {
   flex: 1;
@@ -719,6 +917,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       <button type="button" id="save-note" title="Why export?" hidden>Saved to this browser &mdash; export to keep it safe &#9432;</button>
       <button type="button" id="save-note-ack" hidden>Got it, stop blinking!</button>
     </div>
+    <span id="unfunded-note" hidden>Values after unfunded months (hatched red) are unreliable - hence, greyed out</span>
     <div class="controls">
       <label class="birth">Inflation
         <input type="number" id="inflation-rate" class="tax" min="0" max="100" step="0.1" value="0">%
@@ -728,6 +927,13 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       </label>
     </div>
   </header>
+
+  <div id="save-error" role="alert" hidden>
+    <strong>Changes not saved.</strong>
+    <span>This browser's storage is full or unavailable, so your latest changes will be lost if you reload or close this page or switch projects.</span>
+    <button type="button" id="save-error-export">Export project</button>
+    <button type="button" id="save-error-retry">Retry saving</button>
+  </div>
 
   <main id="bars">
     <div id="pinned">
@@ -744,21 +950,22 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
       <div id="investments-bar" class="bar">
         <div class="bar-head">
           <button type="button" class="add-node">Add Investment Node</button>
-          <span class="bar-label">Investments &mdash; drag to pan, drag head/tail to resize</span>
+          <button type="button" id="toggle-investments" title="Activate/deactivate all investments">Toggle investments</button>
+          <span class="bar-label">Investments &mdash; drag to pan, drag head/tail to resize, click a start date to set dates by month or age</span>
         </div>
       </div>
       <div id="sources-bar" class="bar">
         <div class="bar-head">
           <button type="button" class="add-node">Add Income Node</button>
-          <button type="button" id="toggle-income" title="Activate/deactivate all income sources">Toggle income</button>
-          <span class="bar-label">Income sources &mdash; drag to pan, drag head/tail to resize</span>
+          <button type="button" id="toggle-income" title="Activate/deactivate all income sources">Toggle incomes</button>
+          <span class="bar-label">Income sources &mdash; drag to pan, drag head/tail to resize, click a start date to set dates by month or age</span>
         </div>
       </div>
       <div id="expenses-bar" class="bar">
         <div class="bar-head">
           <button type="button" class="add-node">Add Expense Node</button>
           <button type="button" id="toggle-expenses" title="Activate/deactivate all expenses">Toggle expenses</button>
-          <span class="bar-label">Expense sources &mdash; drag to pan, drag head/tail to resize</span>
+          <span class="bar-label">Expense sources &mdash; drag to pan, drag head/tail to resize, click a start date to set dates by month or age</span>
         </div>
       </div>
     </div>
@@ -796,13 +1003,35 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
 
   <dialog id="expense-picker" aria-labelledby="expense-picker-title"></dialog>
 
+  <dialog id="line-items-dialog" aria-labelledby="line-items-title"></dialog>
+
+  <dialog id="dates-dialog" aria-labelledby="dates-dialog-title">
+    <form method="dialog">
+      <h2 id="dates-dialog-title"></h2>
+      <div class="dates-grid">
+        <span></span><span class="col-head">Month</span><span class="col-head">or age</span>
+        <label for="dates-start">Start</label>
+        <input type="month" id="dates-start" required>
+        <input type="number" id="dates-start-age" min="0" max="120" step="1" aria-label="Age at start">
+        <label for="dates-end">End</label>
+        <input type="month" id="dates-end" required>
+        <input type="number" id="dates-end-age" min="0" max="120" step="1" aria-label="Age at end">
+      </div>
+      <p class="hint" id="dates-hint"></p>
+      <div class="prop-actions">
+        <button value="set">Set</button>
+        <button value="cancel" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
     <form method="dialog">
       <h2 id="confirm-title"></h2>
       <p id="confirm-message"></p>
       <div class="prop-actions">
-        <button value="delete" class="danger">Delete</button>
         <button value="cancel" autofocus>Cancel</button>
+        <button value="delete" class="danger">Delete</button>
       </div>
     </form>
   </dialog>
@@ -838,49 +1067,186 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
     </form>
   </dialog>
 
-  <dialog id="investment-info" aria-label="About this account type">
+  <dialog id="investment-info">
     <form method="dialog">
       <section data-type="stock">
-        <h2>Stock (brokerage account)</h2>
-        <p>A regular, taxable investment account with no special tax treatment.</p>
+        <h2 id="info-stock-title" tabindex="-1">Stock (brokerage account)</h2>
+        <p class="lead">A regular <strong>taxable</strong> account. It is <strong>not</strong> a retirement account: there are no contribution limits, no age rules and no required withdrawals.</p>
+        <h3>Contributions</h3>
         <ul>
-          <li><strong>Contributions:</strong> any amount, any time, from money you've already paid tax on.</li>
-          <li><strong>Withdrawals:</strong> any time, with no penalties.</li>
-          <li><strong>Taxes:</strong> dividends are taxed each year, and selling at a gain is taxed. Holdings kept over a year get long-term capital gains rates (0%, 15% or 20% federal, depending on income); shorter holdings are taxed as ordinary income.</li>
+          <li>Any amount, any time, with money you've already paid income tax on. Nothing is deductible.</li>
         </ul>
-        <p><strong>Here:</strong> the capital gains tax applies only to growth above what you put in, giving the after-tax value at the end date.</p>
+        <h3>Tax treatment</h3>
+        <ul>
+          <li><strong>Cost basis:</strong> generally what you paid for an investment, including commissions. Gains and losses are measured against it.</li>
+          <li><strong>Realized gains:</strong> growth isn't taxed until you sell. Held more than 1 year: long-term, taxed at 0%, 15% or 20% depending on taxable income. Held 1 year or less: short-term, taxed as ordinary income.</li>
+          <li><strong>Dividends:</strong> taxed in the year paid, even if reinvested. &ldquo;Qualified&rdquo; dividends get long-term capital gains rates; other dividends are ordinary income.</li>
+          <li><strong>Interest</strong> (for example from bonds or cash in the account): generally taxable in the year it's paid or credited.</li>
+          <li><strong>Losses:</strong> realized losses offset gains. If losses are bigger, up to $3,000 a year ($1,500 married filing separately) can offset other income (tax year 2026); the rest carries forward.</li>
+          <li>Higher earners may also owe the net investment income tax.</li>
+        </ul>
+        <h3>Withdrawals</h3>
+        <ul>
+          <li>Sell or withdraw any time. There's no early-withdrawal tax and no required minimum distribution; tax depends only on gains, dividends and interest.</li>
+        </ul>
+        <div class="app-note">
+          <h3>In this app</h3>
+          <ul>
+            <li>The <em>capital gains tax</em> rate is applied only to growth above what you put in (initial amount plus contributions) to show the &ldquo;after tax&rdquo; value at the end date.</li>
+            <li>Growth is one steady yearly rate. Yearly tax on dividends and interest, short- vs long-term holding periods, and losses aren't modeled.</li>
+            <li>The payout income created from this account taxes <strong>each whole withdrawal</strong> at that rate; it doesn't exclude your basis, so it overstates tax on withdrawals.</li>
+          </ul>
+        </div>
+        <p class="sources">IRS sources:
+          <a href="https://www.irs.gov/taxtopics/tc409" target="_blank" rel="noopener noreferrer">Topic 409, Capital gains and losses</a> &middot;
+          <a href="https://www.irs.gov/taxtopics/tc404" target="_blank" rel="noopener noreferrer">Topic 404, Dividends</a> &middot;
+          <a href="https://www.irs.gov/taxtopics/tc403" target="_blank" rel="noopener noreferrer">Topic 403, Interest received</a> &middot;
+          <a href="https://www.irs.gov/taxtopics/tc703" target="_blank" rel="noopener noreferrer">Topic 703, Basis of assets</a>
+        </p>
       </section>
       <section data-type="401k">
-        <h2>401(k)</h2>
-        <p>An employer-sponsored retirement plan funded from your paycheck.</p>
+        <h2 id="info-401k-title" tabindex="-1">401(k)</h2>
+        <p class="lead">An employer-sponsored retirement plan. Your plan's own rules can be stricter than the IRS rules below&mdash;check your plan documents.</p>
+        <h3>Contributions</h3>
         <ul>
-          <li><strong>Contributions:</strong> usually pre-tax, lowering your taxable income now. Many employers match part of what you put in. IRS annual limits apply, with extra catch-up room from age 50.</li>
-          <li><strong>Withdrawals:</strong> taxed as ordinary income. Before age 59&frac12; there is generally a 10% penalty, with some exceptions (such as leaving your job in or after the year you turn 55).</li>
-          <li><strong>Required minimum distributions</strong> generally start at age 73 (75 if born in 1960 or later).</li>
+          <li><strong>Your limit</strong> (pre-tax and Roth deferrals combined, across all your 401(k) and 403(b) plans): $24,500 for 2026; $25,500 for 2027.</li>
+          <li><strong>Catch-up</strong>, if you're 50 or older by year-end and the plan allows it: an extra $8,000 for 2026 ($8,500 for 2027). If you turn 60&ndash;63 during the year, the catch-up is $11,250 instead for 2026 ($11,750 for 2027).</li>
+          <li><strong>Employee vs. combined limit:</strong> the limit above covers only your own deferrals. A separate cap covers everything added to your account by one employer&mdash;your deferrals plus matching and other employer contributions: the lesser of 100% of your pay or $72,000 for 2026 (catch-ups are on top).</li>
+          <li><strong>Employer match:</strong> optional and set by your plan. It usually depends on how much of your pay you contribute and is often capped at a percentage of pay; only pay up to $360,000 counts (2026). Matches may <strong>vest</strong> over several years&mdash;unvested amounts can be forfeited if you leave.</li>
         </ul>
-        <p><strong>Here:</strong> the employer match adds that percentage of your monthly contribution, and the withdrawal tax gives the after-tax value at the end date. For a Roth 401(k), set the tax to 0%.</p>
+        <h3>Tax treatment</h3>
+        <ul>
+          <li><strong>Traditional (pre-tax):</strong> deferrals aren't taxed as pay now; contributions and earnings are taxed as ordinary income when withdrawn. Employer matches are typically pre-tax too.</li>
+          <li><strong>Roth deferrals</strong> (a &ldquo;designated Roth account,&rdquo; if your plan offers one): taxed as pay now. A <em>qualified</em> withdrawal is tax-free, earnings included. Qualified means after a 5-tax-year period that starts January 1 of the year of your first Roth deferral to that plan, <strong>and</strong> at age 59&frac12;, disability or death. A non-qualified withdrawal is partly taxable (the earnings share). There's no income limit for Roth deferrals.</li>
+        </ul>
+        <h3>Withdrawals</h3>
+        <ul>
+          <li>Generally allowed only after you leave the employer, reach 59&frac12;, become disabled, die, the plan ends, or for a hardship your plan allows. Pre-tax amounts are taxed as ordinary income.</li>
+        </ul>
+        <h3>Early withdrawals (before 59&frac12;)</h3>
+        <ul>
+          <li><strong>General rule:</strong> a 10% additional tax on the taxable part, on top of income tax.</li>
+          <li><strong>Common exceptions:</strong> leaving that job in or after the year you turn 55 (50 for qualifying public-safety workers)&mdash;this applies to that employer's plan, not IRAs; disability; death; substantially equal periodic payments; medical costs above 7.5% of AGI; payments to an alternate payee under a QDRO (a divorce or support order); a birth or adoption; one emergency withdrawal a year; terminal illness; domestic-abuse victims; qualified disasters.</li>
+        </ul>
+        <h3>Required minimum distributions (RMDs)</h3>
+        <ul>
+          <li><strong>Start:</strong> by April 1 of the year after you reach your RMD age, then by December 31 each year. A missed RMD can cost a 25% excise tax (10% if corrected in time).</li>
+          <li><strong>RMD age by birth date:</strong> before July 1, 1949: 70&frac12;. July 1, 1949&ndash;1950: 72. 1951&ndash;1959: 73. 1960 or later: 75 under the SECURE 2.0 Act&mdash;the IRS pages reviewed here still describe only age 73, so confirm on IRS.gov.</li>
+          <li><strong>Still working:</strong> if your plan allows and you own 5% or less of the employer, RMDs from that employer's plan can wait until April 1 of the year after you retire.</li>
+          <li><strong>Roth deferrals:</strong> no RMDs while you're alive.</li>
+        </ul>
+        <div class="app-note">
+          <h3>In this app</h3>
+          <ul>
+            <li>Contribution and match are fixed monthly amounts with steady growth. Deferral, catch-up and combined limits, match caps and vesting aren't applied or checked.</li>
+            <li>The mirrored expense is your contribution only; the employer match isn't counted as your expense.</li>
+            <li><em>Tax on withdrawal</em> is applied to the whole ending balance for the &ldquo;after tax&rdquo; value and to each payout. For Roth deferrals, set it to 0%&mdash;the app then treats every payout as qualified.</li>
+            <li>The early-withdrawal tax, its exceptions, and RMDs aren't modeled. The payout uses the withdrawal % you choose, which may be less than an RMD.</li>
+          </ul>
+        </div>
+        <p class="sources">IRS sources:
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits" target="_blank" rel="noopener noreferrer">401(k) contribution limits</a> &middot;
+          <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-25500-for-2027-ira-limit-remains-7500" target="_blank" rel="noopener noreferrer">2027 limits (IR-2026-136)</a> &middot;
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/401k-resource-guide-plan-participants-general-distribution-rules" target="_blank" rel="noopener noreferrer">401(k) distribution rules</a> &middot;
+          <a href="https://www.irs.gov/retirement-plans/retirement-plans-faqs-on-designated-roth-accounts" target="_blank" rel="noopener noreferrer">Designated Roth accounts</a> &middot;
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-exceptions-to-tax-on-early-distributions" target="_blank" rel="noopener noreferrer">Early-distribution exceptions</a> &middot;
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds" target="_blank" rel="noopener noreferrer">RMDs</a>
+        </p>
       </section>
       <section data-type="roth">
-        <h2>Roth IRA</h2>
-        <p>An individual retirement account funded with money you've already paid tax on.</p>
+        <h2 id="info-roth-title" tabindex="-1">Roth IRA</h2>
+        <p class="lead">An individual retirement account funded with money you've already paid tax on.</p>
+        <h3>Contributions</h3>
         <ul>
-          <li><strong>Contributions:</strong> limited each year by the IRS, and eligibility phases out at higher incomes. Your contributions (not earnings) can be taken out any time without tax or penalty.</li>
-          <li><strong>Withdrawals:</strong> earnings come out tax- and penalty-free once you're 59&frac12; and the account has been open at least 5 years.</li>
-          <li><strong>No required minimum distributions</strong> during your lifetime.</li>
+          <li><strong>Shared IRA limit:</strong> your total for <em>all</em> traditional and Roth IRAs is $7,500 ($8,600 if 50 or older) for both 2026 and 2027&mdash;or your taxable compensation, if less. A non-working spouse filing jointly can contribute based on the couple's pay.</li>
+          <li><strong>Income eligibility</strong> (modified AGI): the amount you can contribute phases out between $153,000&ndash;$168,000 single or head of household and $242,000&ndash;$252,000 married filing jointly for 2026; $158,000&ndash;$173,000 and $250,000&ndash;$260,000 for 2027. Married filing separately: $0&ndash;$10,000 (not adjusted yearly).</li>
+          <li><strong>Not deductible.</strong> Conversions (moving pre-tax money in from a traditional IRA or plan) are a separate step: the converted pre-tax amount is taxed that year.</li>
         </ul>
-        <p><strong>Here:</strong> there's no tax setting; the whole ending balance is yours.</p>
+        <h3>Withdrawals and tax treatment</h3>
+        <p>Money comes out in this order, across all your Roth IRAs:</p>
+        <ul>
+          <li><strong>1. Regular contributions</strong> &mdash; tax- and penalty-free at any time.</li>
+          <li><strong>2. Conversions</strong> (oldest first) &mdash; no income tax again, but each conversion has its own 5-year clock: taking the taxable converted amount out within 5 years while under 59&frac12; can trigger the 10% additional tax unless an exception applies.</li>
+          <li><strong>3. Earnings</strong> &mdash; tax-free only in a <em>qualified distribution</em>; otherwise taxable, and before 59&frac12; generally subject to the 10% additional tax.</li>
+        </ul>
+        <p><strong>Qualified distribution:</strong> made after a 5-tax-year period that begins January 1 of the first tax year for which you contributed to <em>any</em> Roth IRA&mdash;not when the account was opened (a 2025 contribution made in April 2026 starts the clock on January 1, 2025)&mdash;<strong>and</strong> at age 59&frac12; or older, because of disability, to a beneficiary after death, or for a first home (up to $10,000 lifetime).</p>
+        <h3>Early withdrawals (before 59&frac12;)</h3>
+        <ul>
+          <li>Only earnings and recent conversions are exposed to the 10% additional tax. Exceptions include disability, death, substantially equal periodic payments, medical costs above 7.5% of AGI, health insurance while unemployed, higher-education costs, a first home, a birth or adoption, one emergency withdrawal a year, terminal illness, domestic-abuse victims and qualified disasters.</li>
+        </ul>
+        <h3>Required minimum distributions</h3>
+        <ul>
+          <li>None for the original owner while alive. Beneficiaries who inherit a Roth IRA do have to take distributions.</li>
+        </ul>
+        <div class="app-note">
+          <h3>In this app</h3>
+          <ul>
+            <li>There's no tax setting: the balance and every payout are treated as tax-free, as if every withdrawal were qualified.</li>
+            <li>It doesn't track contributions vs. conversions vs. earnings, the 5-year rules, age 59&frac12;, income eligibility, or contribution limits.</li>
+          </ul>
+        </div>
+        <p class="sources">IRS sources:
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-ira-contribution-limits" target="_blank" rel="noopener noreferrer">IRA contribution limits</a> &middot;
+          <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500" target="_blank" rel="noopener noreferrer">2026 limits (IR-2025-111)</a> &middot;
+          <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-25500-for-2027-ira-limit-remains-7500" target="_blank" rel="noopener noreferrer">2027 limits (IR-2026-136)</a> &middot;
+          <a href="https://www.irs.gov/publications/p590b" target="_blank" rel="noopener noreferrer">Pub. 590-B, IRA distributions</a>
+        </p>
       </section>
       <section data-type="traditional">
-        <h2>Traditional IRA</h2>
-        <p>An individual retirement account where contributions may be tax-deductible.</p>
+        <h2 id="info-traditional-title" tabindex="-1">Traditional IRA</h2>
+        <p class="lead">An individual retirement account where contributions may be tax-deductible and growth is tax-deferred.</p>
+        <h3>Contributions</h3>
         <ul>
-          <li><strong>Contributions:</strong> limited each year by the IRS (one limit shared with any Roth IRA). The deduction phases out at higher incomes if you or your spouse have a workplace plan.</li>
-          <li><strong>Withdrawals:</strong> taxed as ordinary income. Before age 59&frac12; there is generally a 10% penalty, with some exceptions.</li>
-          <li><strong>Required minimum distributions</strong> generally start at age 73 (75 if born in 1960 or later).</li>
+          <li><strong>Who can contribute:</strong> anyone with taxable compensation, at any age (a non-working spouse filing jointly can use the couple's pay).</li>
+          <li><strong>Shared IRA limit:</strong> your total for <em>all</em> traditional and Roth IRAs is $7,500 ($8,600 if 50 or older) for both 2026 and 2027&mdash;or your taxable compensation, if less.</li>
         </ul>
-        <p><strong>Here:</strong> the withdrawal tax gives the after-tax value at the end date.</p>
+        <h3>Tax treatment</h3>
+        <ul>
+          <li><strong>Deduction:</strong> fully deductible if neither you nor your spouse is covered by a retirement plan at work. If one of you is, it phases out by modified AGI and filing status:
+            <ul>
+              <li>Single, covered at work: $81,000&ndash;$91,000 (2026); $83,000&ndash;$93,000 (2027).</li>
+              <li>Married filing jointly, you're covered: $129,000&ndash;$149,000 (2026); $133,000&ndash;$153,000 (2027).</li>
+              <li>You're not covered but your spouse is: $242,000&ndash;$252,000 (2026); $250,000&ndash;$260,000 (2027).</li>
+              <li>Married filing separately, covered: $0&ndash;$10,000 (not adjusted yearly).</li>
+            </ul>
+          </li>
+          <li><strong>Nondeductible contributions create basis</strong> (tracked on Form 8606). Withdrawals are then only <em>partly</em> taxable: each one is split pro-rata between basis and pre-tax money across all your traditional IRAs.</li>
+          <li>Deductible contributions and all earnings are taxed as ordinary income when withdrawn.</li>
+        </ul>
+        <h3>Withdrawals</h3>
+        <ul>
+          <li>Allowed any time; the taxable part is ordinary income.</li>
+        </ul>
+        <h3>Early withdrawals (before 59&frac12;)</h3>
+        <ul>
+          <li><strong>General rule:</strong> a 10% additional tax on the taxable part.</li>
+          <li><strong>Common exceptions:</strong> disability, death, substantially equal periodic payments, medical costs above 7.5% of AGI, health insurance while unemployed, higher-education costs, a first home (up to $10,000 lifetime), a birth or adoption, one emergency withdrawal a year, terminal illness, domestic-abuse victims, qualified disasters. The age-55 &ldquo;left my job&rdquo; exception does <strong>not</strong> apply to IRAs.</li>
+        </ul>
+        <h3>Required minimum distributions (RMDs)</h3>
+        <ul>
+          <li><strong>Start:</strong> by April 1 of the year after you reach your RMD age, then by December 31 each year&mdash;even if you're still working (there's no still-working exception for IRAs). A missed RMD can cost a 25% excise tax (10% if corrected in time).</li>
+          <li><strong>RMD age by birth date:</strong> before July 1, 1949: 70&frac12;. July 1, 1949&ndash;1950: 72. 1951&ndash;1959: 73. 1960 or later: 75 under the SECURE 2.0 Act&mdash;the IRS pages reviewed here still describe only age 73, so confirm on IRS.gov.</li>
+        </ul>
+        <div class="app-note">
+          <h3>In this app</h3>
+          <ul>
+            <li><em>Tax on withdrawal</em> is applied to the whole ending balance and to each payout. Deductions, basis and pro-rata withdrawals aren't modeled&mdash;if you have basis, enter an effective rate.</li>
+            <li>Contribution limits, eligibility, the early-withdrawal tax and RMDs aren't applied. The payout uses the withdrawal % you choose, which may be less than an RMD.</li>
+          </ul>
+        </div>
+        <p class="sources">IRS sources:
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-ira-contribution-limits" target="_blank" rel="noopener noreferrer">IRA contribution limits</a> &middot;
+          <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500" target="_blank" rel="noopener noreferrer">2026 limits (IR-2025-111)</a> &middot;
+          <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-25500-for-2027-ira-limit-remains-7500" target="_blank" rel="noopener noreferrer">2027 limits (IR-2026-136)</a> &middot;
+          <a href="https://www.irs.gov/publications/p590b" target="_blank" rel="noopener noreferrer">Pub. 590-B, IRA distributions</a> &middot;
+          <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds" target="_blank" rel="noopener noreferrer">RMDs</a>
+        </p>
       </section>
-      <p class="note">General information, not tax advice. IRS rules and limits change every year.</p>
+      <div class="info-footer">
+        <p><strong>Not checked by the app.</strong> These rules are for reference only; the app doesn't validate or enforce any of them. You're responsible for choosing appropriate inputs.</p>
+        <p>Dollar figures apply only to the tax year shown. Limits change most years, so they may not match what applies in later years of your projection.</p>
+        <p>Checked against IRS.gov on November 13, 2026. General information, not tax, legal or investment advice.</p>
+      </div>
       <div class="prop-actions"><button>Got it</button></div>
     </form>
   </dialog>
@@ -958,7 +1324,7 @@ body.drawer-open #project-drawer { transform: none; visibility: visible; }
   <script>
 'use strict';
 
-const APP_VERSION = 'v1.4';
+const APP_VERSION = 'v1.5';
 const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/amortaza/nestegg/main/latest';
 const UPDATE_CHECK_MS = 60 * 60 * 1000;
 
@@ -988,6 +1354,8 @@ const PROJECT_NAME_MAX = 60;
 const DEFAULT_INITIAL = 100000;
 const DEFAULT_WITHDRAW_PCT = 4;
 const DEFAULT_GROWTH_PCT = 5;
+// Yearly withdrawal for the income that pays out an investment's ending balance.
+const DEFAULT_PAYOUT_PCT = 7;
 const DEFAULT_DEATH_AGE = 90;
 
 const nextYear = () => new Date().getFullYear() + 1;
@@ -1004,6 +1372,8 @@ const state = defaultState();
 const projects = { list: [], activeId: null, nextId: 1 };
 const sourceEls = new Map();
 const laneOf = new Map();
+// Read-only nodes derived from the active investments, keyed by their own id; never saved.
+const mirrors = new Map();
 let dragging = false;
 
 const $ = (id) => document.getElementById(id);
@@ -1094,13 +1464,15 @@ function investmentRates(s) {
 
 function grossAt(s, m) {
   if (m < s.start || m >= s.end) return 0;
-  if (s.kind === 'expense') return s.monthly * inflationFactor(m);
+  // A mirrored contribution is a fixed amount, so it isn't inflated.
+  if (s.kind === 'expense') return s.monthly * (s.mirrorOf ? 1 : inflationFactor(m));
   // Regular income steps up once a year, on each anniversary of its start month.
   if (!s.investment) return s.monthly * Math.pow(1 + s.incomeGrowthPct / 100, Math.floor((m - s.start) / 12));
   const { withdraw, ratio } = investmentRates(s);
   return s.initial * Math.pow(ratio, m - s.start) * withdraw;
 }
 
+const itemsTotal = (items) => items.reduce((sum, item) => (item.active ? sum + item.amount : sum), 0);
 const taxPctOf = (s) => (s.kind === 'expense' ? 0 : s.taxPct);
 const amountAt = (s, m) => grossAt(s, m) * (1 - taxPctOf(s) / 100);
 
@@ -1137,14 +1509,19 @@ function sourceTotal(s) {
   return s.initial * withdraw * series * (1 - taxPctOf(s) / 100);
 }
 
-const monthlyTotal = (m, kind, amount = amountAt) => state.sources
-  .reduce((sum, s) => (s.kind === kind && s.active ? sum + amount(s, m) : sum), 0);
+function monthlyTotal(m, kind, amount = amountAt) {
+  let sum = 0;
+  for (const s of state.sources) if (s.kind === kind && s.active) sum += amount(s, m);
+  for (const s of mirrors.values()) if (s.kind === kind) sum += amount(s, m);
+  return sum;
+}
 
 // Surpluses go in; a deficit is withdrawn only if the balance can cover all of it, so it never goes negative.
 function computePiggyBank() {
   const balance = new Float64Array(MAX_MONTH);
   const covered = new Uint8Array(MAX_MONTH);
   let saved = 0;
+  let firstUnfunded = null;
   for (let m = rangeStart(); m < rangeEnd(); m++) {
     const net = monthlyTotal(m, 'income') - monthlyTotal(m, 'expense');
     if (net >= 0) {
@@ -1152,13 +1529,15 @@ function computePiggyBank() {
     } else if (saved >= -net) {
       saved += net;
       covered[m] = 1;
+    } else if (firstUnfunded === null) {
+      firstUnfunded = m;
     }
     balance[m] = saved;
   }
-  return { balance, covered };
+  return { balance, covered, firstUnfunded };
 }
 
-let piggyBank = { balance: new Float64Array(MAX_MONTH), covered: new Uint8Array(MAX_MONTH) };
+let piggyBank = { balance: new Float64Array(MAX_MONTH), covered: new Uint8Array(MAX_MONTH), firstUnfunded: null };
 
 // Only the birth year is known, so this is the age reached during that calendar year.
 function ageAt(m) {
@@ -1205,6 +1584,17 @@ function removeStored(key) {
   }
 }
 
+// Which kinds of project data ('state', 'projects') failed their latest save; the warning stays until they succeed.
+const failedSaves = new Set();
+
+function trackSave(kind, key, value) {
+  const ok = writeJSON(key, value);
+  if (ok) failedSaves.delete(kind);
+  else failedSaves.add(kind);
+  $('save-error').hidden = failedSaves.size === 0;
+  return ok;
+}
+
 // Projects whose data changed this session and haven't been exported since.
 const unexported = new Set();
 let savedSnapshot = null;
@@ -1236,7 +1626,7 @@ function renderSaveNote() {
 }
 
 function saveState() {
-  if (!writeJSON(projectKey(projects.activeId), state)) return;
+  if (!trackSave('state', projectKey(projects.activeId), state)) return;
   const snapshot = dataSnapshot();
   if (savedSnapshot !== null && snapshot !== savedSnapshot) {
     unexported.add(projects.activeId);
@@ -1252,6 +1642,7 @@ function loadState(saved = readJSON(projectKey(projects.activeId))) {
   for (const el of sourceEls.values()) el.root.remove();
   sourceEls.clear();
   laneOf.clear();
+  mirrors.clear();
   Object.assign(state, defaultState());
 
   if (saved && typeof saved === 'object') applySavedState(saved);
@@ -1280,11 +1671,19 @@ function applySavedState(saved) {
       let taxPct = Number.isFinite(s.taxPct) ? clamp(s.taxPct, 0, 100) : 0;
       // Older saves taxed every investment at one project-wide rate.
       if (investment && 'taxRate' in saved) taxPct = validTaxRate(saved.taxRate);
+      const items = kind === 'expense' && Array.isArray(s.items)
+        ? s.items.filter((item) => item && typeof item === 'object').map((item) => ({
+          label: String(item.label ?? '').slice(0, 40),
+          amount: Number.isFinite(item.amount) ? Math.max(0, item.amount) : 0,
+          active: item.active !== false,
+        }))
+        : [];
       return {
         id: s.id,
         kind,
         name,
-        monthly: Math.max(0, s.monthly),
+        monthly: items.length ? itemsTotal(items) : Math.max(0, s.monthly),
+        items,
         start: s.start,
         end: s.end,
         active: s.active !== false && canActivate({ name }),
@@ -1300,6 +1699,7 @@ function applySavedState(saved) {
         investmentType: Object.hasOwn(INVESTMENT_TYPES, s.investmentType) ? s.investmentType : 'stock',
         contribution: Number.isFinite(s.contribution) ? Math.max(0, s.contribution) : 0,
         matchPct: Number.isFinite(s.matchPct) ? clamp(s.matchPct, 0, 200) : 0,
+        payoutPct: Number.isFinite(s.payoutPct) ? clamp(s.payoutPct, 0, 100) : DEFAULT_PAYOUT_PCT,
       };
     });
 
@@ -1325,7 +1725,7 @@ function applySavedState(saved) {
   state.viewEnd = rangeEnd();
   if (!legacyFullRange && Number.isFinite(saved.viewStart) && Number.isFinite(saved.viewEnd)) {
     const viewSpan = clamp(saved.viewEnd - saved.viewStart, MIN_SPAN, rangeEnd() - rangeStart());
-    state.viewStart = clamp(saved.viewStart + shift, rangeStart(), rangeEnd() - viewSpan);
+    state.viewStart = clamp(saved.viewStart + shift, 0, MAX_MONTH - viewSpan);
     state.viewEnd = state.viewStart + viewSpan;
   }
 }
@@ -1333,7 +1733,7 @@ function applySavedState(saved) {
 // ---------- Projects ----------
 
 const projectKey = (id) => `${STORAGE_KEY}:${id}`;
-const saveProjects = () => writeJSON(PROJECTS_KEY, projects);
+const saveProjects = () => trackSave('projects', PROJECTS_KEY, projects);
 const currentProject = () => projects.list.find((p) => p.id === projects.activeId);
 
 function addProject(name) {
@@ -1511,9 +1911,10 @@ function setDrawer(open) {
 
 // ---------- View (zoom / pan) ----------
 
+// Panning may leave the project's year range, but not the app's full timeline.
 function setView(start, newSpan) {
   newSpan = clamp(newSpan, MIN_SPAN, rangeEnd() - rangeStart());
-  start = clamp(start, rangeStart(), rangeEnd() - newSpan);
+  start = clamp(start, 0, MAX_MONTH - newSpan);
   state.viewStart = start;
   state.viewEnd = start + newSpan;
   render();
@@ -1584,6 +1985,8 @@ function drawTimeline() {
 }
 
 const hatches = new Map();
+const SUMMARY_COLORS = { coveredHatch: '#2f6b4a', surplus: 'rgba(95,211,141,0.25)', piggy: 'rgba(245,197,66,0.55)', incomeLine: '#5fd38d', expenseLine: '#2f6b4a' };
+const SUMMARY_GRAYS = { coveredHatch: '#4a505c', surplus: 'rgba(138,147,166,0.15)', piggy: 'rgba(138,147,166,0.3)', incomeLine: '#6b7385', expenseLine: '#4a505c' };
 // Months dragged out on the summary bar; the next new source takes them as its start/end.
 let selection = null;
 let selecting = false;
@@ -1679,16 +2082,34 @@ function drawSummary() {
     ctx.stroke();
   };
   const covered = income.map((v, i) => Math.min(v, expenses[i]));
-  fillBand(covered, covered.map(() => 0), ctx.createPattern(hatchTile('#2f6b4a'), 'repeat'));
-  fillBand(income, covered, 'rgba(95,211,141,0.25)');
-
-  ctx.fillStyle = 'rgba(245,197,66,0.55)';
-  for (let i = 0; i < income.length; i++) {
-    if (!piggyBank.covered[first + i]) continue;
-    const x0 = monthToX(first + i);
-    const top = h - expenses[i] * scale;
-    ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
-  }
+  const drawLayers = (p) => {
+    fillBand(covered, covered.map(() => 0), ctx.createPattern(hatchTile(p.coveredHatch), 'repeat'));
+    fillBand(income, covered, p.surplus);
+    ctx.fillStyle = p.piggy;
+    for (let i = 0; i < income.length; i++) {
+      if (!piggyBank.covered[first + i]) continue;
+      const x0 = monthToX(first + i);
+      const top = h - expenses[i] * scale;
+      ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
+    }
+  };
+  const drawLines = (p) => {
+    strokeSteps(income, p.incomeLine);
+    strokeSteps(expenses, p.expenseLine);
+  };
+  // Figures after the first unfunded month can't be relied on, so everything but the deficits is grayed there.
+  const grayX = piggyBank.firstUnfunded === null ? w : clamp(monthToX(piggyBank.firstUnfunded + 1), 0, w);
+  const clipped = (x0, x1, draw) => {
+    if (x1 <= x0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, 0, x1 - x0, h);
+    ctx.clip();
+    draw();
+    ctx.restore();
+  };
+  clipped(0, grayX, () => drawLayers(SUMMARY_COLORS));
+  clipped(grayX, w, () => drawLayers(SUMMARY_GRAYS));
 
   // Deficits the piggy bank cannot cover.
   ctx.fillStyle = ctx.createPattern(hatchTile('#e05252'), 'repeat');
@@ -1699,8 +2120,8 @@ function drawSummary() {
     ctx.fillRect(x0, top, monthToX(first + i + 1) - x0, (expenses[i] - income[i]) * scale);
   }
 
-  strokeSteps(income, '#5fd38d');
-  strokeSteps(expenses, '#2f6b4a');
+  clipped(0, grayX, () => drawLines(SUMMARY_COLORS));
+  clipped(grayX, w, () => drawLines(SUMMARY_GRAYS));
 
   ctx.font = '12px system-ui, sans-serif';
   ctx.fillStyle = '#8a93a6';
@@ -1718,6 +2139,8 @@ function newSource(kind, start, end, fields = {}) {
     kind,
     name: `${KINDS[kind].label} ${id}`,
     monthly: 1000,
+    // Expense line items; when there are any, `monthly` is their sum.
+    items: [],
     start,
     end,
     active: true,
@@ -1733,6 +2156,7 @@ function newSource(kind, start, end, fields = {}) {
     investmentType: 'stock',
     contribution: 0,
     matchPct: 0,
+    payoutPct: DEFAULT_PAYOUT_PCT,
     ...fields,
   };
   state.sources.push(s);
@@ -1774,6 +2198,95 @@ function toggleInvestment(s) {
   render();
 }
 
+const allSources = () => [...state.sources, ...mirrors.values()];
+
+// Each active investment gets an expense for its contribution and an income pot paying out its ending balance.
+function syncMirrors() {
+  const live = new Set();
+  const upsert = (inv, id, base, fields) => {
+    live.add(id);
+    let m = mirrors.get(id);
+    if (!m) {
+      m = { id, mirrorOf: inv.id, active: true, items: [], headW: HEAD_W, tailW: TAIL_W, ...base };
+      mirrors.set(id, m);
+      sourceEls.set(id, createMirrorEl(m, inv));
+    }
+    Object.assign(m, { name: inv.name, ...fields });
+    const el = sourceEls.get(id);
+    el.nameLabel.textContent = m.name || '(unnamed)';
+    el.amountLabel.textContent = withCommas(m.kind === 'expense' ? m.monthly : m.initial);
+    if (m.kind === 'income') el.noteLabel.textContent = `Payout \u00b7 ${m.growthPct}% growth/yr \u00b7 ${m.taxPct}% tax`;
+  };
+  const maxYear = maxAgeYear();
+  const payoutEnd = Math.min(maxYear === null ? rangeEnd() : yearEnd(maxYear), rangeEnd());
+  for (const inv of state.sources) {
+    if (inv.kind !== 'investment' || !inv.active) continue;
+    upsert(inv, `expense-${inv.id}`, { kind: 'expense', color: EXPENSE_COLORS[0] },
+      { monthly: inv.contribution, start: inv.start, end: inv.end });
+    if (payoutEnd <= inv.end) continue;
+    upsert(inv, `income-${inv.id}`, { kind: 'income', investment: true, color: COLORS[0] }, {
+      start: inv.end,
+      end: payoutEnd,
+      initial: remainingBalance(inv),
+      withdrawPct: inv.payoutPct,
+      growthPct: inv.growthPct,
+      taxPct: INVESTMENT_TYPES[inv.investmentType].taxLabel ? inv.taxPct : 0,
+    });
+  }
+  for (const [id, m] of mirrors) {
+    if (live.has(id)) continue;
+    sourceEls.get(m.id).root.remove();
+    sourceEls.delete(m.id);
+    laneOf.delete(m.id);
+    mirrors.delete(id);
+  }
+}
+
+function createMirrorEl(m, inv) {
+  const isIncome = m.kind === 'income';
+  const root = document.createElement('div');
+  root.className = 'source mirror';
+  root.dataset.id = m.id;
+  root.style.setProperty('--color', m.color);
+  root.title = isIncome
+    ? 'Pays out an active investment\'s ending balance. Only the withdrawal % can be changed here; edit the investment for the rest.'
+    : 'Read only: mirrors an active investment\'s monthly contribution. Edit the investment to change it.';
+  root.innerHTML = `
+    <div class="head">
+      <div class="row"><span class="mirror-name"></span><span class="date start"></span></div>
+      ${isIncome
+    ? `<div class="row">$<span class="mirror-amount"></span> initial</div>
+      <div class="row"><input type="number" class="pct" min="0" max="100" step="0.1" title="Yearly withdrawal % of current balance">% draw/yr</div>
+      <div class="mirror-note"></div>`
+    : `<div class="row">$<span class="mirror-amount"></span>/mo</div>
+      <div class="mirror-note">Investment contribution (read only)</div>`}
+    </div>
+    <div class="tail">
+      <div class="total"></div>
+      ${isIncome ? '<div class="remaining"></div>' : ''}
+      <div class="date end"></div>
+    </div>`;
+  const q = (sel) => root.querySelector(sel);
+  if (isIncome) {
+    const pct = q('.pct');
+    pct.value = inv.payoutPct;
+    pct.addEventListener('input', () => { inv.payoutPct = clamp(Number(pct.value) || 0, 0, 100); render(); });
+  }
+  KINDS[m.kind].bar.appendChild(root);
+  return {
+    root,
+    head: q('.head'),
+    tail: q('.tail'),
+    startLabel: q('.date.start'),
+    endLabel: q('.date.end'),
+    totalLabel: q('.total'),
+    remainingLabel: q('.remaining'),
+    nameLabel: q('.mirror-name'),
+    amountLabel: q('.mirror-amount'),
+    noteLabel: q('.mirror-note'),
+  };
+}
+
 function createSourceEl(s) {
   const root = document.createElement('div');
   root.className = s.investment ? 'source investment' : 'source';
@@ -1782,13 +2295,15 @@ function createSourceEl(s) {
   const type = INVESTMENT_TYPES[s.investmentType];
   const isInvestment = s.kind === 'investment';
   const isPot = s.investment || isInvestment;
+  const itemLabels = s.items.map((item) => item.label.trim()).filter(Boolean).join(', ');
   const amountRows = isPot
     ? `<div class="row">$<input type="text" inputmode="numeric" class="initial" title="Initial amount">${MONEY_STEPPER}</div>
        ${s.investment ? '<div class="row"><input type="number" class="pct" min="0" max="100" step="0.1" title="Yearly withdrawal % of current balance">% draw/yr</div>' : ''}
        ${isInvestment ? `<div class="row">$<input type="text" inputmode="numeric" class="contribution" title="Monthly contribution">${MONEY_STEPPER}/mo${type.match ? ' <input type="number" class="match-pct" min="0" max="200" step="1" title="Employer match, % of your contribution">% match' : ''}</div>` : ''}
        <div class="row growth-row"><input type="number" class="growth" min="-100" max="100" step="0.1" title="Yearly growth %">% growth/yr</div>
        ${isInvestment && type.taxLabel ? `<div class="row tax-row"><input type="number" class="tax-pct" min="0" max="100" step="0.1" title="${type.taxLabel}">% ${type.taxLabel.toLowerCase()}</div>` : ''}`
-    : `<div class="row">$<input type="text" inputmode="numeric" class="amount">${MONEY_STEPPER}/mo</div>
+    : `<div class="row">$${amountField(s)}/mo${s.kind === 'expense' ? ` ${lineItemsButton(s)}` : ''}</div>
+       ${itemLabels ? '<div class="items-list"></div>' : ''}
        ${s.kind === 'income' ? '<div class="row growth-row"><input type="number" class="income-growth" min="-100" max="100" step="0.1" title="Yearly growth %">% growth/yr</div>' : ''}`;
   root.innerHTML = `
     <div class="head">
@@ -1797,8 +2312,8 @@ function createSourceEl(s) {
       <div class="row">
         <input type="checkbox" class="active" title="Active">
         <input type="text" class="name" maxlength="40">
-        ${isInvestment ? `<span class="inv-type">${type.label}</span>${infoButton(s.investmentType, `About ${type.label}`)}` : ''}
-        <span class="date start"></span>
+        ${isInvestment ? `<span class="inv-type">${type.label}</span>${accountInfoButton(s.investmentType)}` : ''}
+        <button type="button" class="date start"></button>
         <button type="button" class="delete" title="Remove">&times;</button>
       </div>
       ${amountRows}
@@ -1814,6 +2329,10 @@ function createSourceEl(s) {
     </div>`;
 
   const q = (sel) => root.querySelector(sel);
+  if (itemLabels) {
+    q('.items-list').textContent = itemLabels;
+    q('.items-list').title = itemLabels;
+  }
   q('.active').checked = s.active;
   q('.name').value = s.name;
 
@@ -1841,6 +2360,7 @@ function createSourceEl(s) {
   });
   q('.to-death').addEventListener('click', (e) => moveEndToDeathAge(s, e.currentTarget));
   q('.to-next-year').addEventListener('click', (e) => moveStartToNextYear(s, e.currentTarget));
+  q('.date.start').addEventListener('click', () => openDatesDialog(s));
   if (isPot) {
     bindMoneyInput(q('.initial'), 1000, () => s.initial, (v) => { s.initial = v; });
     q('.growth').value = s.growthPct;
@@ -1850,9 +2370,10 @@ function createSourceEl(s) {
     q('.pct').value = s.withdrawPct;
     q('.pct').addEventListener('input', (e) => { s.withdrawPct = clamp(Number(e.target.value) || 0, 0, 100); render(); });
   } else if (!isPot) {
-    bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+    if (!s.items.length) bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
     if (s.kind === 'income') bindIncomeGrowthInput(q('.income-growth'), s);
   }
+  if (s.kind === 'expense') q('.items-btn').addEventListener('click', () => openLineItems(s));
   if (isInvestment) {
     bindMoneyInput(q('.contribution'), 100, () => s.contribution, (v) => { s.contribution = v; });
     if (type.match) bindMatchInput(q('.match-pct'), s);
@@ -1893,6 +2414,82 @@ function fitNameInput(input) {
   input.style.width = `${Math.ceil(measureCtx.measureText(input.value).width) + 2}px`;
 }
 
+// With line items the monthly amount is their sum, so it's shown rather than edited.
+const amountField = (s) => (s.items.length
+  ? `<span class="items-sum">${withCommas(s.monthly)}</span>`
+  : `<input type="text" inputmode="numeric" class="amount">${MONEY_STEPPER}`);
+const lineItemsButton = (s) => `<button type="button" class="items-btn" title="Line items" aria-label="Line items">&#9776;${s.items.length ? ` ${s.items.length}` : ''}</button>`;
+
+const lineItemsDialog = $('line-items-dialog');
+
+function openLineItems(s) {
+  lineItemsDialog.style.setProperty('--color', s.color);
+  lineItemsDialog.innerHTML = `
+    <form method="dialog">
+      <h2 id="line-items-title"></h2>
+      <div class="line-items-editor"></div>
+      <div class="prop-actions"><button>Done</button></div>
+    </form>`;
+  lineItemsDialog.querySelector('#line-items-title').textContent = `${s.name || '(unnamed)'} line items`;
+  renderLineItemsEditor(lineItemsDialog.querySelector('.line-items-editor'), s);
+  lineItemsDialog.showModal();
+}
+
+// Edits apply live and keep the expense's monthly amount equal to the active items' sum.
+function renderLineItemsEditor(container, s, onChange = () => {}) {
+  container.innerHTML = `
+    <ul class="line-items"></ul>
+    <button type="button" class="add-item">+ Add item</button>
+    <div class="items-total"></div>`;
+  const list = container.querySelector('.line-items');
+  const total = container.querySelector('.items-total');
+  const showTotal = () => { total.textContent = `Total ${money(s.monthly)} / month`; };
+  const sync = () => {
+    if (s.items.length) s.monthly = itemsTotal(s.items);
+    showTotal();
+    rebuildSourceEl(s);
+    onChange();
+  };
+  const addRow = (item) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<input type="checkbox" class="item-active" title="Active" aria-label="Active">
+      <input type="text" class="item-label" maxlength="40" placeholder="Label" aria-label="Label">
+      <span>$<input type="text" inputmode="numeric" class="item-amount" aria-label="Monthly cost">${MONEY_STEPPER}</span>
+      <button type="button" class="delete" title="Remove item" aria-label="Remove item">&times;</button>`;
+    const activeBox = li.querySelector('.item-active');
+    activeBox.checked = item.active;
+    li.classList.toggle('inactive', !item.active);
+    activeBox.addEventListener('change', () => {
+      item.active = activeBox.checked;
+      li.classList.toggle('inactive', !item.active);
+      sync();
+      render();
+    });
+    const label = li.querySelector('.item-label');
+    label.value = item.label;
+    label.addEventListener('input', () => { item.label = label.value; rebuildSourceEl(s); render(); });
+    bindMoneyInput(li.querySelector('.item-amount'), 50, () => item.amount, (v) => { item.amount = v; sync(); });
+    li.querySelector('.delete').addEventListener('click', () => {
+      s.items.splice(s.items.indexOf(item), 1);
+      li.remove();
+      sync();
+      render();
+    });
+    list.appendChild(li);
+    return li;
+  };
+  container.querySelector('.add-item').addEventListener('click', () => {
+    // The first item starts at the current amount, so adding items doesn't zero the expense.
+    const item = { label: '', amount: s.items.length ? 0 : s.monthly, active: true };
+    s.items.push(item);
+    addRow(item).querySelector('.item-label').focus();
+    sync();
+    render();
+  });
+  for (const item of s.items) addRow(item);
+  showTotal();
+}
+
 function bindIncomeGrowthInput(input, s) {
   input.value = s.incomeGrowthPct;
   input.addEventListener('input', () => { s.incomeGrowthPct = clamp(Number(input.value) || 0, -100, 100); render(); });
@@ -1900,6 +2497,7 @@ function bindIncomeGrowthInput(input, s) {
 
 const infoButton = (key, title) => `<button type="button" class="info-btn" data-info="${key}" title="${title}" aria-label="${title}">&#9432;</button>`;
 const TAX_INFO_BUTTON = infoButton('tax', 'How tax is calculated');
+const accountInfoButton = (key) => infoButton(key, `About ${INVESTMENT_TYPES[key].label} account rules`);
 
 function bindMatchInput(input, s) {
   input.value = s.matchPct;
@@ -1911,8 +2509,21 @@ function bindTaxInput(input, s) {
   input.addEventListener('input', () => { s.taxPct = clamp(Number(input.value) || 0, 0, 100); render(); });
 }
 
-const MONEY_FINE_STEP = 100;
-const MONEY_STEPPER = `<span class="money-step"><button type="button" class="money-up" title="+$${MONEY_FINE_STEP}" aria-label="Increase by $${MONEY_FINE_STEP}">&#9650;</button><button type="button" class="money-down" title="&minus;$${MONEY_FINE_STEP}" aria-label="Decrease by $${MONEY_FINE_STEP}">&#9660;</button></span>`;
+// [upper bound, step] pairs: the ▲/▼ step grows with the amount; $100,000 at or above the last bound.
+const MONEY_FINE_STEPS = [[2000, 100], [5000, 200], [10000, 500], [50000, 1000], [100000, 10000], [500000, 50000]];
+const moneyFineStep = (v) => MONEY_FINE_STEPS.find(([below]) => v < below)?.[1] ?? 100000;
+const MONEY_STEPPER = `<span class="money-step"><button type="button" class="money-up" title="Increase" aria-label="Increase">&#9650;</button><button type="button" class="money-down" title="Decrease" aria-label="Decrease">&#9660;</button></span>`;
+
+// Honors a leading '-' and the first '.', ignores '$', commas and the like; `text` keeps what was typed.
+function parseMoneyText(raw) {
+  const sign = /^[^\d.]*-/.test(raw) ? '-' : '';
+  const body = raw.replace(/[^\d.]/g, '');
+  const dot = body.indexOf('.');
+  const whole = dot < 0 ? body : body.slice(0, dot);
+  const fraction = dot < 0 ? null : body.slice(dot + 1).replace(/\./g, '');
+  const text = `${sign}${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${fraction === null ? '' : `.${fraction}`}`;
+  return { text, value: Number(`${sign}${whole || '0'}.${fraction || '0'}`) };
+}
 
 // Whole-dollar text input shown with thousands separators; arrow keys step like a number input.
 function bindMoneyInput(input, step, get, set) {
@@ -1924,25 +2535,31 @@ function bindMoneyInput(input, step, get, set) {
   input.value = withCommas(get());
   input.addEventListener('input', () => {
     const raw = input.value;
-    const digitsBeforeCaret = raw.slice(0, input.selectionStart).replace(/\D/g, '').length;
-    const digits = raw.replace(/\D/g, '');
-    set(Number(digits) || 0);
-    input.value = digits ? withCommas(get()) : '';
+    const keptBeforeCaret = parseMoneyText(raw.slice(0, input.selectionStart)).text.replace(/,/g, '').length;
+    const { text, value } = parseMoneyText(raw);
+    // Amounts are whole, non-negative dollars; the text itself is only normalized on blur.
+    set(Math.max(0, Math.round(value)));
+    input.value = text;
     let pos = 0;
-    for (let seen = 0; pos < input.value.length && seen < digitsBeforeCaret; pos++) {
-      if (/\d/.test(input.value[pos])) seen++;
+    for (let seen = 0; pos < text.length && seen < keptBeforeCaret; pos++) {
+      if (text[pos] !== ',') seen++;
     }
     input.setSelectionRange(pos, pos);
     render();
   });
   input.addEventListener('blur', () => { input.value = withCommas(get()); });
   input.addEventListener('keydown', (e) => {
+    // Deleting just a comma changes no digits, so it would reappear; delete the digit after it instead.
+    if (e.key === 'Delete' && input.selectionStart === input.selectionEnd && input.value[input.selectionStart] === ',') {
+      input.setSelectionRange(input.selectionStart + 1, input.selectionStart + 1);
+      return;
+    }
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
     nudge(e.key === 'ArrowUp' ? step : -step);
   });
-  input.parentElement.querySelector('.money-up').addEventListener('click', () => nudge(MONEY_FINE_STEP));
-  input.parentElement.querySelector('.money-down').addEventListener('click', () => nudge(-MONEY_FINE_STEP));
+  input.parentElement.querySelector('.money-up').addEventListener('click', () => nudge(moneyFineStep(get())));
+  input.parentElement.querySelector('.money-down').addEventListener('click', () => nudge(-moneyFineStep(get())));
 }
 
 const maxAgeYear = () => (state.birthYear === null ? null : state.birthYear + state.deathAge);
@@ -2033,7 +2650,7 @@ function enableResize(grip, s, prop, minW, dir) {
 }
 
 function layoutSources(kind) {
-  const sources = state.sources.filter((s) => s.kind === kind);
+  const sources = allSources().filter((s) => s.kind === kind);
   for (const s of sources) sourceEls.get(s.id).root.hidden = !inRange(s);
   const visible = sources.filter(inRange);
   // Write every label before reading any width, so measuring costs a single reflow.
@@ -2045,22 +2662,27 @@ function layoutSources(kind) {
       // Head sits left of the start month, tail sits right of the end month.
       return { s, tailW, x0: monthToX(s.start) - head.offsetWidth, x1: monthToX(s.end) + tailW };
     })
-    .sort((a, b) => a.x0 - b.x0 || a.s.id - b.s.id);
+    .sort((a, b) => a.x0 - b.x0 || (a.s.mirrorOf ?? a.s.id) - (b.s.mirrorOf ?? b.s.id));
 
   // Lanes are frozen while dragging; otherwise each source keeps its previous lane unless it now overlaps.
   const laneEnds = [];
   const isFree = (lane, x0) => laneEnds[lane] === undefined || laneEnds[lane] + 6 <= x0;
-  for (const p of placed) {
-    const prev = laneOf.get(p.s.id);
-    let lane = prev;
-    if (prev === undefined || (!dragging && !isFree(prev, p.x0))) {
-      lane = 0;
-      while (!isFree(lane, p.x0)) lane++;
+  const assignLanes = (group, base) => {
+    for (const p of group) {
+      const prev = laneOf.get(p.s.id);
+      let lane = prev;
+      if (prev === undefined || prev < base || (!dragging && !isFree(prev, p.x0))) {
+        lane = base;
+        while (!isFree(lane, p.x0)) lane++;
+      }
+      laneOf.set(p.s.id, lane);
+      laneEnds[lane] = Math.max(laneEnds[lane] ?? -Infinity, p.x1);
+      positionSource(p, lane);
     }
-    laneOf.set(p.s.id, lane);
-    laneEnds[lane] = Math.max(laneEnds[lane] ?? -Infinity, p.x1);
-    positionSource(p, lane);
-  }
+  };
+  // Mirrored contributions always take the top lanes.
+  assignLanes(placed.filter((p) => p.s.mirrorOf), 0);
+  assignLanes(placed.filter((p) => !p.s.mirrorOf), laneEnds.length);
   KINDS[kind].bar.style.height = `${Math.max(BAR_H, LANES_TOP + laneEnds.length * LANE_H + 8)}px`;
 }
 
@@ -2087,7 +2709,7 @@ function updateSourceLabels(s) {
     else if (age !== null) label.append(` (${age})`);
   };
   showDateWithAge(el.startLabel, '', s.start);
-  el.startLabel.title = `Starts ${monthLabel(s.start)}`;
+  el.startLabel.title = `Starts ${monthLabel(s.start)}${s.mirrorOf ? '' : ' \u2014 click to change dates'}`;
   showDateWithAge(el.endLabel, 'to ', s.end - 1);
   el.totalLabel.textContent = s.kind === 'investment'
     ? `${money(remainingBalance(s))} balance`
@@ -2153,7 +2775,7 @@ function renderTypePicker(s) {
       <p class="hint">What type of account is it?</p>
       ${Object.entries(INVESTMENT_TYPES).map(([key, { label }]) => `<div class="type-option">
         <button type="button" class="pick-type" data-type="${key}">${label}</button>
-        ${infoButton(key, `About ${label}`)}
+        ${accountInfoButton(key)}
       </div>`).join('')}
       <div class="prop-actions"><button type="button" class="cancel">Cancel</button></div>
     </form>`;
@@ -2161,6 +2783,7 @@ function renderTypePicker(s) {
   for (const button of sourceDialog.querySelectorAll('.pick-type')) {
     button.addEventListener('click', () => {
       s.investmentType = button.dataset.type;
+      s.name = INVESTMENT_TYPES[s.investmentType].label;
       rebuildSourceEl(s);
       render();
       renderSourceForm(s);
@@ -2170,8 +2793,18 @@ function renderTypePicker(s) {
 }
 
 function openInvestmentInfo(key) {
-  for (const section of investmentInfo.querySelectorAll('section')) section.hidden = section.dataset.type !== key;
+  const opener = document.activeElement;
+  let heading = null;
+  for (const section of investmentInfo.querySelectorAll('section[data-type]')) {
+    section.hidden = section.dataset.type !== key;
+    if (!section.hidden) heading = section.querySelector('h2');
+  }
+  investmentInfo.setAttribute('aria-labelledby', heading.id);
   investmentInfo.showModal();
+  investmentInfo.scrollTop = 0;
+  heading.focus();
+  // The card can open over another dialog, so put focus back on the exact button that opened it.
+  investmentInfo.addEventListener('close', () => { if (opener?.isConnected) opener.focus(); }, { once: true });
 }
 
 // Resolves true only when the user clicks Delete; Cancel and Escape count as no.
@@ -2278,16 +2911,21 @@ function renderSourceForm(s) {
       ${isInvestment && type.taxLabel ? `<label class="prop invest-row">${type.taxLabel} <span><input type="number" class="tax-pct" min="0" max="100" step="0.1">%</span></label>` : ''}`
     : '';
   const monthlyRow = s.kind !== 'investment'
-    ? `<label class="prop monthly-row">Monthly amount <span>$<input type="text" inputmode="numeric" class="amount">${MONEY_STEPPER}</span></label>`
+    ? '<label class="prop monthly-row">Monthly amount <span class="monthly-field"></span></label>'
+    : '';
+  // Collapsed by default to keep the dialog short.
+  const lineItemsRow = s.kind === 'expense'
+    ? '<details class="line-items-section"><summary></summary><div class="line-items-editor"></div></details>'
     : '';
   sourceDialog.innerHTML = `
     <form method="dialog">
-      <h2>New ${isInvestment ? type.label : KINDS[s.kind].label.toLowerCase()}</h2>
+      <h2>New ${isInvestment ? `${type.label} ${accountInfoButton(s.investmentType)}` : KINDS[s.kind].label.toLowerCase()}</h2>
       ${investmentToggle}
       <label class="prop">Name <input type="text" class="name" maxlength="40"></label>
       <p class="hint">Names starting with "Income" or "Expense" are left inactive.</p>
       ${investmentRows}
       ${monthlyRow}
+      ${lineItemsRow}
       ${s.kind === 'income' ? `<label class="prop monthly-row">Growth / yr <span><input type="number" class="income-growth" min="-100" max="100" step="0.1">%</span></label>
       <div class="prop"><span>Tax rate ${TAX_INFO_BUTTON}</span><span><input type="number" class="tax-pct" min="0" max="100" step="0.1" aria-label="Tax rate">%</span></div>` : ''}
       <label class="prop">Start <input type="month" class="start"></label>
@@ -2306,7 +2944,18 @@ function renderSourceForm(s) {
   q('.cancel').addEventListener('click', () => sourceDialog.close('cancel'));
   nameInput.value = s.name;
   nameInput.addEventListener('input', () => { s.name = nameInput.value; saveState(); });
-  if (monthlyRow) bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+  const monthlyField = q('.monthly-field');
+  const showMonthly = () => {
+    monthlyField.innerHTML = `$${amountField(s)}`;
+    if (!s.items.length) bindMoneyInput(q('.amount'), 50, () => s.monthly, (v) => { s.monthly = v; });
+  };
+  if (monthlyField) showMonthly();
+  if (lineItemsRow) {
+    const summary = q('.line-items-section summary');
+    const showCount = () => { summary.textContent = `Line items${s.items.length ? ` (${s.items.length})` : ''}`; };
+    renderLineItemsEditor(q('.line-items-editor'), s, () => { showMonthly(); showCount(); });
+    showCount();
+  }
   if (investmentRows) {
     bindMoneyInput(q('.initial'), 1000, () => s.initial, (v) => { s.initial = v; });
     q('.growth').value = s.growthPct;
@@ -2356,6 +3005,71 @@ function renderSourceForm(s) {
   }
   showDates();
 }
+
+// ---------- Dates dialog ----------
+
+const datesDialog = $('dates-dialog');
+const datesStart = $('dates-start');
+const datesEnd = $('dates-end');
+const datesStartAge = $('dates-start-age');
+const datesEndAge = $('dates-end-age');
+let datesSource = null;
+
+function showDateAges() {
+  const ageOf = (input) => {
+    const m = parseMonthValue(input.value);
+    return m === null ? null : ageAt(m);
+  };
+  datesStartAge.value = ageOf(datesStart) ?? '';
+  datesEndAge.value = ageOf(datesEnd) ?? '';
+  datesEnd.min = datesStart.value || monthValue(rangeStart());
+}
+
+function openDatesDialog(s) {
+  datesSource = s;
+  datesDialog.style.setProperty('--color', s.color);
+  $('dates-dialog-title').textContent = `${s.name || '(unnamed)'} dates`;
+  for (const input of [datesStart, datesEnd]) {
+    input.min = monthValue(rangeStart());
+    input.max = monthValue(rangeEnd() - 1);
+  }
+  datesStart.value = monthValue(s.start);
+  datesEnd.value = monthValue(s.end - 1);
+  const noBirth = state.birthYear === null;
+  datesStartAge.disabled = noBirth;
+  datesEndAge.disabled = noBirth;
+  $('dates-hint').textContent = noBirth
+    ? 'Set a year of birth in Project settings to enter ages.'
+    : 'A start age begins in January of that year; an end age runs through December.';
+  showDateAges();
+  datesDialog.returnValue = '';
+  datesDialog.showModal();
+}
+
+// Only the birth year is known, so an age maps to a whole calendar year.
+function bindAgeInput(ageInput, monthInput, monthOfYear) {
+  ageInput.addEventListener('input', () => {
+    const age = Number.parseInt(ageInput.value, 10);
+    if (!Number.isInteger(age) || state.birthYear === null) return;
+    monthInput.value = monthValue(clamp(monthOfYear(state.birthYear + age), rangeStart(), rangeEnd() - 1));
+    datesEnd.min = datesStart.value;
+  });
+}
+
+bindAgeInput(datesStartAge, datesStart, yearStart);
+bindAgeInput(datesEndAge, datesEnd, (year) => yearEnd(year) - 1);
+datesStart.addEventListener('input', showDateAges);
+datesEnd.addEventListener('input', showDateAges);
+datesDialog.addEventListener('close', () => {
+  const s = datesSource;
+  datesSource = null;
+  if (datesDialog.returnValue !== 'set' || !s) return;
+  const start = parseMonthValue(datesStart.value);
+  const last = parseMonthValue(datesEnd.value);
+  if (start !== null) s.start = clamp(start, rangeStart(), rangeEnd() - 1);
+  s.end = clamp(last === null ? s.end : last + 1, s.start + 1, rangeEnd());
+  render();
+});
 
 // ---------- Hover tooltip ----------
 
@@ -2418,7 +3132,7 @@ function renderLegend(slices, total) {
 
 function showTooltip(e) {
   const m = clamp(Math.floor(xToMonth(localX(e, summaryBar))), rangeStart(), rangeEnd() - 1);
-  const slices = state.sources
+  const slices = allSources()
     .filter((s) => s.kind === 'income' && s.active)
     .map((s, i) => ({ name: s.name, color: pieColor(i), value: amountAt(s, m) }))
     .filter((slice) => slice.value > 0);
@@ -2444,7 +3158,7 @@ function showTooltip(e) {
   tooltipYearTitle.textContent = `${BASE_YEAR + yearStart / 12} totals`;
   tooltipYearIncome.textContent = money(yearlyGross);
   tooltipYearTaxes.textContent = money(yearlyGross - yearlyIncome);
-  tooltipNet.textContent = `Net ${money(net)} / month (Yearly ${money(yearlyIncome)})`;
+  tooltipNet.textContent = `Net ${money(net)} / month`;
   tooltipNet.classList.toggle('negative', net < 0);
   tooltipPiggy.textContent = `Piggy bank ${money(piggyBank.balance[m])}`
     + (piggyBank.covered[m] ? ` (covered ${money(-net)})` : '');
@@ -2496,7 +3210,9 @@ function showNotice(anchor, text) {
 }
 
 function render() {
+  syncMirrors();
   piggyBank = computePiggyBank();
+  $('unfunded-note').hidden = piggyBank.firstUnfunded === null;
   drawTimeline();
   drawSummary();
   for (const kind of Object.keys(KINDS)) layoutSources(kind);
@@ -2578,7 +3294,7 @@ for (const bar of [timelineBar, investmentsBar, sourcesBar, expensesBar]) {
   bar.addEventListener('pointermove', (e) => {
     if (dragging) return;
     const el = e.target.closest('.source');
-    const s = el ? state.sources.find((src) => src.id === Number(el.dataset.id)) : null;
+    const s = el ? allSources().find((src) => String(src.id) === el.dataset.id) : null;
     showDragLabel(e, clamp(Math.floor(xToMonth(localX(e, bar))), rangeStart(), rangeEnd() - 1), s);
   });
   bar.addEventListener('pointerleave', () => { if (!dragging) dragLabel.hidden = true; });
@@ -2600,6 +3316,7 @@ function toggleAll(kind) {
   }
   render();
 }
+$('toggle-investments').addEventListener('click', () => toggleAll('investment'));
 $('toggle-income').addEventListener('click', () => toggleAll('income'));
 $('toggle-expenses').addEventListener('click', () => toggleAll('expense'));
 $('birth-year').addEventListener('input', (e) => {
@@ -2608,7 +3325,7 @@ $('birth-year').addEventListener('input', (e) => {
 });
 $('death-age').addEventListener('input', (e) => {
   state.deathAge = validDeathAge(Number.parseInt(e.target.value, 10));
-  saveState();
+  render();
 });
 $('death-age').addEventListener('change', (e) => { e.target.value = state.deathAge; });
 
@@ -2689,6 +3406,12 @@ $('project-new').addEventListener('click', () => {
 });
 $('project-clone').addEventListener('click', cloneProject);
 $('project-export').addEventListener('click', exportProject);
+$('save-error-export').addEventListener('click', exportProject);
+$('save-error-retry').addEventListener('click', (e) => {
+  saveProjects();
+  saveState();
+  if (failedSaves.size) showNotice(e.currentTarget, 'Still couldn\'t save. Free up browser storage, or export the project to keep these changes.');
+});
 $('project-import').addEventListener('click', () => $('import-file').click());
 $('import-file').addEventListener('change', (e) => {
   const [file] = e.target.files;
@@ -2696,7 +3419,7 @@ $('import-file').addEventListener('change', (e) => {
   if (file) importProject(file);
 });
 document.addEventListener('keydown', (e) => {
-  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker, inflationDialog, updateDialog].find((d) => d.open);
+  const popup = [taxInfo, investmentInfo, confirmDialog, expensePicker, inflationDialog, updateDialog, lineItemsDialog, datesDialog].find((d) => d.open);
   if (e.key === 'Escape' && popup) {
     // Left to itself, the browser may close the dialog or drawer underneath instead of the popup.
     e.preventDefault();
